@@ -9,6 +9,8 @@ pub struct Artist {
     pub bio: String,
     pub social: Option<String>,
     pub royalty_balance: u64,
+    pub profile_image_url: Option<String>,
+    pub links: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -78,6 +80,44 @@ pub struct Activity {
     pub details: String,
 }
 
+// Collaboration Request and Task Management
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum CollabRequestStatus {
+    Pending,
+    Accepted,
+    Declined,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct CollabRequest {
+    pub id: u64,
+    pub from: u64, // artist id
+    pub to: u64,   // artist id
+    pub track_id: u64,
+    pub message: Option<String>,
+    pub status: CollabRequestStatus,
+    pub timestamp: u64,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum TaskStatus {
+    Open,
+    InProgress,
+    Completed,
+    Cancelled,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Task {
+    pub id: u64,
+    pub track_id: u64,
+    pub assigned_to: u64, // artist id
+    pub description: String,
+    pub status: TaskStatus,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
 thread_local! {
     static ARTISTS: RefCell<Vec<Artist>> = RefCell::new(Vec::new());
     static TRACKS: RefCell<Vec<Track>> = RefCell::new(Vec::new());
@@ -85,6 +125,10 @@ thread_local! {
     static TRACK_ID: RefCell<u64> = RefCell::new(1);
     static TRACK_VERSIONS: RefCell<Vec<(u64, Vec<TrackVersion>)>> = RefCell::new(Vec::new()); // track_id -> versions
     static ACTIVITY_LOG: RefCell<Vec<Activity>> = RefCell::new(Vec::new());
+    static COLLAB_REQUESTS: RefCell<Vec<CollabRequest>> = RefCell::new(Vec::new());
+    static COLLAB_REQUEST_ID: RefCell<u64> = RefCell::new(1);
+    static TASKS: RefCell<Vec<Task>> = RefCell::new(Vec::new());
+    static TASK_ID: RefCell<u64> = RefCell::new(1);
 }
 
 #[ic_cdk::query]
@@ -94,7 +138,7 @@ fn greet(name: String) -> String {
 
 // Artist CRUD
 #[ic_cdk::update]
-fn register_artist(name: String, bio: String, social: Option<String>) -> Option<Artist> {
+fn register_artist(name: String, bio: String, social: Option<String>, profile_image_url: Option<String>, links: Option<Vec<String>>) -> Option<Artist> {
     if name.trim().is_empty() {
         return None;
     }
@@ -107,6 +151,8 @@ fn register_artist(name: String, bio: String, social: Option<String>) -> Option<
                 bio,
                 social,
                 royalty_balance: 0,
+                profile_image_url,
+                links,
             };
             artists.borrow_mut().push(artist.clone());
             *id_mut += 1;
@@ -121,13 +167,15 @@ fn get_artist(id: u64) -> Option<Artist> {
 }
 
 #[ic_cdk::update]
-fn update_artist(id: u64, name: String, bio: String, social: Option<String>) -> Option<Artist> {
+fn update_artist(id: u64, name: String, bio: String, social: Option<String>, profile_image_url: Option<String>, links: Option<Vec<String>>) -> Option<Artist> {
     ARTISTS.with(|artists| {
         let mut artists = artists.borrow_mut();
         if let Some(artist) = artists.iter_mut().find(|a| a.id == id) {
             artist.name = name;
             artist.bio = bio;
             artist.social = social;
+            artist.profile_image_url = profile_image_url;
+            artist.links = links;
             return Some(artist.clone());
         }
         None
@@ -302,7 +350,11 @@ fn get_track_versions(track_id: u64) -> Vec<TrackVersion> {
 fn search_tracks_by_title(query: String) -> Vec<Track> {
     let q = query.to_lowercase();
     TRACKS.with(|tracks| {
-        tracks.borrow().iter().filter(|t| t.title.to_lowercase().contains(&q)).cloned().collect()
+        if q.is_empty() {
+            tracks.borrow().clone()
+        } else {
+            tracks.borrow().iter().filter(|t| t.title.to_lowercase().contains(&q)).cloned().collect()
+        }
     })
 }
 
@@ -569,5 +621,105 @@ fn search_tracks_by_tag(tag: String) -> Vec<Track> {
 fn search_tracks_by_genre(genre: String) -> Vec<Track> {
     TRACKS.with(|tracks| {
         tracks.borrow().iter().filter(|t| t.genre.as_ref().map(|g| g == &genre).unwrap_or(false)).cloned().collect()
+    })
+}
+
+// Collaboration Request Endpoints
+#[ic_cdk::update]
+fn send_collab_request(from: u64, to: u64, track_id: u64, message: Option<String>) -> Option<CollabRequest> {
+    let now = ic_cdk::api::time() / 1_000_000;
+    COLLAB_REQUESTS.with(|requests| {
+        COLLAB_REQUEST_ID.with(|id| {
+            let mut id_mut = id.borrow_mut();
+            // Prevent duplicate pending requests
+            if requests.borrow().iter().any(|r| r.from == from && r.to == to && r.track_id == track_id && r.status == CollabRequestStatus::Pending) {
+                return None;
+            }
+            let req = CollabRequest {
+                id: *id_mut,
+                from,
+                to,
+                track_id,
+                message,
+                status: CollabRequestStatus::Pending,
+                timestamp: now,
+            };
+            requests.borrow_mut().push(req.clone());
+            *id_mut += 1;
+            Some(req)
+        })
+    })
+}
+
+#[ic_cdk::update]
+fn respond_collab_request(request_id: u64, accept: bool) -> Option<CollabRequest> {
+    COLLAB_REQUESTS.with(|requests| {
+        let mut requests = requests.borrow_mut();
+        if let Some(req) = requests.iter_mut().find(|r| r.id == request_id && r.status == CollabRequestStatus::Pending) {
+            req.status = if accept { CollabRequestStatus::Accepted } else { CollabRequestStatus::Declined };
+            return Some(req.clone());
+        }
+        None
+    })
+}
+
+#[ic_cdk::query]
+fn list_collab_requests_for_user(user_id: u64) -> Vec<CollabRequest> {
+    COLLAB_REQUESTS.with(|requests| {
+        requests.borrow().iter().filter(|r| r.to == user_id || r.from == user_id).cloned().collect()
+    })
+}
+
+// Task Management Endpoints
+#[ic_cdk::update]
+fn create_task(track_id: u64, assigned_to: u64, description: String) -> Option<Task> {
+    if description.trim().is_empty() {
+        return None;
+    }
+    let now = ic_cdk::api::time() / 1_000_000;
+    TASKS.with(|tasks| {
+        TASK_ID.with(|id| {
+            let mut id_mut = id.borrow_mut();
+            let task = Task {
+                id: *id_mut,
+                track_id,
+                assigned_to,
+                description,
+                status: TaskStatus::Open,
+                created_at: now,
+                updated_at: now,
+            };
+            tasks.borrow_mut().push(task.clone());
+            *id_mut += 1;
+            Some(task)
+        })
+    })
+}
+
+#[ic_cdk::update]
+fn update_task_status(task_id: u64, status: TaskStatus) -> Option<Task> {
+    let now = ic_cdk::api::time() / 1_000_000;
+    TASKS.with(|tasks| {
+        let mut tasks = tasks.borrow_mut();
+        if let Some(task) = tasks.iter_mut().find(|t| t.id == task_id) {
+            task.status = status;
+            task.updated_at = now;
+            return Some(task.clone());
+        }
+        None
+    })
+}
+
+#[ic_cdk::query]
+fn list_tasks_for_track(track_id: u64) -> Vec<Task> {
+    TASKS.with(|tasks| {
+        tasks.borrow().iter().filter(|t| t.track_id == track_id).cloned().collect()
+    })
+}
+
+#[ic_cdk::query]
+fn list_tasks_for_user(user_id: u64) -> Vec<Task> {
+    TASKS.with(|tasks| {
+        tasks.borrow().iter().filter(|t| t.assigned_to == user_id).cloned().collect()
     })
 }

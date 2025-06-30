@@ -2,12 +2,36 @@ type TrackVisibility = variant { Public; Private; InviteOnly };
 type TrackRole = variant { Owner; Collaborator; Viewer };
 type Activity = record { user_id: nat64; action: text; timestamp: nat64; details: text };
 
+// Add new types for profile customization
+
+type CollabRequestStatus = variant { Pending; Accepted; Declined };
+type CollabRequest = record {
+  id: nat64;
+  from: nat64;
+  to: nat64;
+  track_id: nat64;
+  message: opt text;
+  status: CollabRequestStatus;
+  timestamp: nat64;
+};
+
+type TaskStatus = variant { Open; InProgress; Completed; Cancelled };
+type Task = record {
+  id: nat64;
+  track_id: nat64;
+  assigned_to: nat64;
+  description: text;
+  status: TaskStatus;
+  created_at: nat64;
+  updated_at: nat64;
+};
+
 service : {
     "greet": (text) -> (text) query;
-    "register_artist": (text, text, opt text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 });
+    "register_artist": (text, text, opt text, opt text, opt vec text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64; profile_image_url: opt text; links: opt vec text });
     "get_artist": (nat64) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 }) query;
-    "update_artist": (nat64, text, text, opt text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 });
-    "list_artists": () -> (vec record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 }) query;
+    "update_artist": (nat64, text, text, opt text, opt text, opt vec text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64; profile_image_url: opt text; links: opt vec text });
+    "list_artists": () -> (vec record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64; profile_image_url: opt text; links: opt vec text }) query;
     "create_track": (text, text, vec nat64) -> (opt record {
         id: nat64;
         title: text;
@@ -85,4 +109,13 @@ service : {
         tags: vec text;
         genre: opt text;
     }) query;
+    // Collaboration request endpoints
+    "send_collab_request": (nat64, nat64, nat64, opt text) -> (opt CollabRequest);
+    "respond_collab_request": (nat64, bool) -> (opt CollabRequest);
+    "list_collab_requests_for_user": (nat64) -> (vec CollabRequest) query;
+    // Task management endpoints
+    "create_task": (nat64, nat64, text) -> (opt Task);
+    "update_task_status": (nat64, TaskStatus) -> (opt Task);
+    "list_tasks_for_track": (nat64) -> (vec Task) query;
+    "list_tasks_for_user": (nat64) -> (vec Task) query;
 }
