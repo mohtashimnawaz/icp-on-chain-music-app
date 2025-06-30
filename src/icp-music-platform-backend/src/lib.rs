@@ -59,6 +59,7 @@ pub struct Track {
     pub tags: Vec<String>,
     pub genre: Option<String>,
     pub play_count: u64, // new field for analytics
+    pub downloadable: bool,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -148,6 +149,76 @@ pub struct Notification {
     pub read: bool,
 }
 
+// 4. Playlist Management
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Playlist {
+    pub id: u64,
+    pub owner: Principal,
+    pub name: String,
+    pub description: Option<String>,
+    pub track_ids: Vec<u64>,
+    pub created_at: u64,
+    pub updated_at: u64,
+}
+
+// --- Reporting & Moderation ---
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum ReportTargetType {
+    User,
+    Artist,
+    Track,
+    Comment,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum ReportStatus {
+    Pending,
+    Reviewed,
+    Dismissed,
+    Resolved,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Report {
+    pub id: u64,
+    pub reporter: Principal,
+    pub target_type: ReportTargetType,
+    pub target_id: String, // Could be principal, artist id, track id, or comment id as string
+    pub reason: String,
+    pub details: Option<String>,
+    pub status: ReportStatus,
+    pub created_at: u64,
+    pub reviewed_by: Option<Principal>,
+    pub reviewed_at: Option<u64>,
+    pub resolution_notes: Option<String>,
+}
+
+// --- Track Licensing/Contracts ---
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum LicenseType {
+    AllRightsReserved,
+    CreativeCommons,
+    Custom,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TrackLicense {
+    pub track_id: u64,
+    pub license_type: LicenseType,
+    pub terms: Option<String>,
+    pub contract_text: Option<String>,
+    pub issued_at: u64,
+}
+
+// --- API Rate Limiting ---
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct RateLimitEntry {
+    pub principal: Principal,
+    pub last_call: u64,
+    pub call_count: u32,
+    pub window_start: u64,
+}
+
 thread_local! {
     static ARTISTS: RefCell<Vec<Artist>> = RefCell::new(Vec::new());
     static TRACKS: RefCell<Vec<Track>> = RefCell::new(Vec::new());
@@ -165,6 +236,15 @@ thread_local! {
     static NOTIFICATION_ID: RefCell<u64> = RefCell::new(1);
     static FOLLOWED_ARTISTS: RefCell<Vec<(Principal, Vec<Principal>)>> = RefCell::new(Vec::new());
     static FOLLOWED_TRACKS: RefCell<Vec<(Principal, Vec<u64>)>> = RefCell::new(Vec::new());
+    static PLAYLISTS: RefCell<Vec<Playlist>> = RefCell::new(Vec::new());
+    static PLAYLIST_ID: RefCell<u64> = RefCell::new(1);
+    static PLAY_COUNTS: RefCell<Vec<PlayDownloadCount>> = RefCell::new(Vec::new());
+    static MESSAGES: RefCell<Vec<Message>> = RefCell::new(Vec::new());
+    static MESSAGE_ID: RefCell<u64> = RefCell::new(1);
+    static REPORTS: RefCell<Vec<Report>> = RefCell::new(Vec::new());
+    static REPORT_ID: RefCell<u64> = RefCell::new(1);
+    static TRACK_LICENSES: RefCell<Vec<TrackLicense>> = RefCell::new(Vec::new());
+    static RATE_LIMITS: RefCell<Vec<RateLimitEntry>> = RefCell::new(Vec::new());
 }
 
 #[ic_cdk::query]
@@ -261,6 +341,7 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> O
                 tags: vec![],
                 genre: None,
                 play_count: 0,
+                downloadable: true,
             };
             tracks.borrow_mut().push(track.clone());
             // Store initial version
@@ -1143,4 +1224,312 @@ pub fn promote_to_admin() -> bool {
         }
         false
     })
+}
+
+// 4. Playlist Management
+#[ic_cdk::update]
+pub fn create_playlist(name: String, description: Option<String>, track_ids: Vec<u64>) -> Option<Playlist> {
+    let owner = caller();
+    if name.trim().is_empty() {
+        return None;
+    }
+    let now = ic_cdk::api::time() / 1_000_000;
+    let id = PLAYLIST_ID.with(|pid| {
+        let mut pid = pid.borrow_mut();
+        let id = *pid;
+        *pid += 1;
+        id
+    });
+    let playlist = Playlist {
+        id,
+        owner,
+        name,
+        description,
+        track_ids,
+        created_at: now,
+        updated_at: now,
+    };
+    PLAYLISTS.with(|p| p.borrow_mut().push(playlist.clone()));
+    Some(playlist)
+}
+
+#[ic_cdk::update]
+pub fn update_playlist(playlist_id: u64, name: String, description: Option<String>, track_ids: Vec<u64>) -> Option<Playlist> {
+    let owner = caller();
+    PLAYLISTS.with(|p| {
+        let mut p = p.borrow_mut();
+        if let Some(playlist) = p.iter_mut().find(|pl| pl.id == playlist_id && pl.owner == owner) {
+            playlist.name = name;
+            playlist.description = description;
+            playlist.track_ids = track_ids;
+            playlist.updated_at = ic_cdk::api::time() / 1_000_000;
+            return Some(playlist.clone());
+        }
+        None
+    })
+}
+
+#[ic_cdk::update]
+pub fn delete_playlist(playlist_id: u64) -> bool {
+    let owner = caller();
+    PLAYLISTS.with(|p| {
+        let mut p = p.borrow_mut();
+        let len_before = p.len();
+        p.retain(|pl| !(pl.id == playlist_id && pl.owner == owner));
+        p.len() < len_before
+    })
+}
+
+#[ic_cdk::query]
+pub fn list_playlists() -> Vec<Playlist> {
+    let owner = caller();
+    PLAYLISTS.with(|p| p.borrow().iter().filter(|pl| pl.owner == owner).cloned().collect())
+}
+
+#[ic_cdk::query]
+pub fn get_playlist(playlist_id: u64) -> Option<Playlist> {
+    PLAYLISTS.with(|p| p.borrow().iter().find(|pl| pl.id == playlist_id).cloned())
+}
+
+// 5. Track Download/Streaming Controls
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct PlayDownloadCount {
+    pub principal: Principal,
+    pub track_id: u64,
+    pub play_count: u64,
+    pub download_count: u64,
+}
+
+// Extend Track with downloadable
+// (Add: pub downloadable: bool, default true)
+// Update Track struct definition and all usages accordingly
+
+#[ic_cdk::update]
+pub fn set_track_downloadable(track_id: u64, downloadable: bool) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            track.downloadable = downloadable;
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::query]
+pub fn can_download_track(track_id: u64) -> bool {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id).map(|t| t.downloadable).unwrap_or(false)
+    })
+}
+
+#[ic_cdk::update]
+pub fn record_play(track_id: u64) -> bool {
+    let principal = caller();
+    PLAY_COUNTS.with(|pc| {
+        let mut pc = pc.borrow_mut();
+        if let Some(entry) = pc.iter_mut().find(|e| e.principal == principal && e.track_id == track_id) {
+            entry.play_count += 1;
+        } else {
+            pc.push(PlayDownloadCount { principal, track_id, play_count: 1, download_count: 0 });
+        }
+        true
+    })
+}
+
+#[ic_cdk::update]
+pub fn record_download(track_id: u64) -> bool {
+    let principal = caller();
+    PLAY_COUNTS.with(|pc| {
+        let mut pc = pc.borrow_mut();
+        if let Some(entry) = pc.iter_mut().find(|e| e.principal == principal && e.track_id == track_id) {
+            entry.download_count += 1;
+        } else {
+            pc.push(PlayDownloadCount { principal, track_id, play_count: 0, download_count: 1 });
+        }
+        true
+    })
+}
+
+#[ic_cdk::query]
+pub fn get_user_play_count(track_id: u64) -> u64 {
+    let principal = caller();
+    PLAY_COUNTS.with(|pc| {
+        pc.borrow().iter().find(|e| e.principal == principal && e.track_id == track_id).map(|e| e.play_count).unwrap_or(0)
+    })
+}
+
+#[ic_cdk::query]
+pub fn get_user_download_count(track_id: u64) -> u64 {
+    let principal = caller();
+    PLAY_COUNTS.with(|pc| {
+        pc.borrow().iter().find(|e| e.principal == principal && e.track_id == track_id).map(|e| e.download_count).unwrap_or(0)
+    })
+}
+
+// 6. User-to-User Messaging
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Message {
+    pub id: u64,
+    pub from: Principal,
+    pub to: Principal,
+    pub content: String,
+    pub timestamp: u64,
+    pub read: bool,
+}
+
+#[ic_cdk::update]
+pub fn send_message(to: Principal, content: String) -> Option<Message> {
+    let from = caller();
+    if content.trim().is_empty() {
+        return None;
+    }
+    let now = ic_cdk::api::time() / 1_000_000;
+    let id = MESSAGE_ID.with(|mid| {
+        let mut mid = mid.borrow_mut();
+        let id = *mid;
+        *mid += 1;
+        id
+    });
+    let message = Message {
+        id,
+        from,
+        to,
+        content,
+        timestamp: now,
+        read: false,
+    };
+    MESSAGES.with(|m| m.borrow_mut().push(message.clone()));
+    Some(message)
+}
+
+#[ic_cdk::query]
+pub fn list_messages_with(user: Principal) -> Vec<Message> {
+    let me = caller();
+    MESSAGES.with(|m| {
+        m.borrow().iter().filter(|msg| (msg.from == me && msg.to == user) || (msg.from == user && msg.to == me)).cloned().collect()
+    })
+}
+
+#[ic_cdk::update]
+pub fn mark_message_read(message_id: u64) -> bool {
+    let me = caller();
+    MESSAGES.with(|m| {
+        let mut m = m.borrow_mut();
+        if let Some(msg) = m.iter_mut().find(|msg| msg.id == message_id && msg.to == me) {
+            msg.read = true;
+            return true;
+        }
+        false
+    })
+}
+
+// --- Reporting & Moderation Endpoints ---
+#[ic_cdk::update]
+pub fn report_content(target_type: ReportTargetType, target_id: String, reason: String, details: Option<String>) -> Option<Report> {
+    let reporter = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    let id = REPORT_ID.with(|rid| {
+        let mut rid = rid.borrow_mut();
+        let id = *rid;
+        *rid += 1;
+        id
+    });
+    let report = Report {
+        id,
+        reporter,
+        target_type,
+        target_id,
+        reason,
+        details,
+        status: ReportStatus::Pending,
+        created_at: now,
+        reviewed_by: None,
+        reviewed_at: None,
+        resolution_notes: None,
+    };
+    REPORTS.with(|r| r.borrow_mut().push(report.clone()));
+    Some(report)
+}
+
+#[ic_cdk::query]
+pub fn list_reports() -> Vec<Report> {
+    REPORTS.with(|r| r.borrow().clone())
+}
+
+#[ic_cdk::update]
+pub fn review_report(report_id: u64, status: ReportStatus, resolution_notes: Option<String>) -> bool {
+    let reviewer = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    // Only admin or moderator can review
+    if !is_admin(reviewer) {
+        return false;
+    }
+    REPORTS.with(|r| {
+        let mut r = r.borrow_mut();
+        if let Some(report) = r.iter_mut().find(|rep| rep.id == report_id) {
+            report.status = status;
+            report.reviewed_by = Some(reviewer);
+            report.reviewed_at = Some(now);
+            report.resolution_notes = resolution_notes;
+            return true;
+        }
+        false
+    })
+}
+
+// --- Track Licensing/Contracts Endpoints ---
+#[ic_cdk::update]
+pub fn set_track_license(track_id: u64, license_type: LicenseType, terms: Option<String>, contract_text: Option<String>) -> Option<TrackLicense> {
+    let now = ic_cdk::api::time() / 1_000_000;
+    let license = TrackLicense {
+        track_id,
+        license_type,
+        terms,
+        contract_text,
+        issued_at: now,
+    };
+    TRACK_LICENSES.with(|tl| {
+        let mut tl = tl.borrow_mut();
+        // Replace if exists
+        if let Some(existing) = tl.iter_mut().find(|l| l.track_id == track_id) {
+            *existing = license.clone();
+        } else {
+            tl.push(license.clone());
+        }
+    });
+    Some(license)
+}
+
+#[ic_cdk::query]
+pub fn get_track_license(track_id: u64) -> Option<TrackLicense> {
+    TRACK_LICENSES.with(|tl| tl.borrow().iter().find(|l| l.track_id == track_id).cloned())
+}
+
+// --- API Rate Limiting (Basic, for demonstration) ---
+fn check_rate_limit(principal: Principal, max_calls: u32, window_secs: u64) -> bool {
+    let now = ic_cdk::api::time() / 1_000_000;
+    let mut allowed = false;
+    RATE_LIMITS.with(|rl| {
+        let mut rl = rl.borrow_mut();
+        if let Some(entry) = rl.iter_mut().find(|e| e.principal == principal) {
+            if now - entry.window_start > window_secs {
+                entry.window_start = now;
+                entry.call_count = 1;
+                allowed = true;
+            } else if entry.call_count < max_calls {
+                entry.call_count += 1;
+                allowed = true;
+            }
+        } else {
+            rl.push(RateLimitEntry {
+                principal,
+                last_call: now,
+                call_count: 1,
+                window_start: now,
+            });
+            allowed = true;
+        }
+    });
+    allowed
 }

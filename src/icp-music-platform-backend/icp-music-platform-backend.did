@@ -34,6 +34,32 @@ type TrackAnalytics = record {
   avg_rating: nat8;
 };
 
+// --- Reporting & Moderation ---
+type ReportTargetType = variant { User; Artist; Track; Comment };
+type ReportStatus = variant { Pending; Reviewed; Dismissed; Resolved };
+type Report = record {
+  id: nat64;
+  reporter: principal;
+  target_type: ReportTargetType;
+  target_id: text;
+  reason: text;
+  details: opt text;
+  status: ReportStatus;
+  created_at: nat64;
+  reviewed_by: opt principal;
+  reviewed_at: opt nat64;
+  resolution_notes: opt text;
+};
+// --- Track Licensing/Contracts ---
+type LicenseType = variant { AllRightsReserved; CreativeCommons; Custom };
+type TrackLicense = record {
+  track_id: nat64;
+  license_type: LicenseType;
+  terms: opt text;
+  contract_text: opt text;
+  issued_at: nat64;
+};
+
 service : {
     "greet": (text) -> (text) query;
     "register_artist": (text, text, opt text, opt text, opt vec text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64; profile_image_url: opt text; links: opt vec text });
@@ -144,4 +170,28 @@ service : {
     "unfollow_track": (nat64) -> (bool);
     "list_followed_tracks": () -> (vec nat64) query;
     "promote_to_admin": () -> (bool);
+    // Playlist Management
+    "create_playlist": (text, opt text, vec nat64) -> (opt record { id: nat64; owner: principal; name: text; description: opt text; track_ids: vec nat64; created_at: nat64; updated_at: nat64 });
+    "update_playlist": (nat64, text, opt text, vec nat64) -> (opt record { id: nat64; owner: principal; name: text; description: opt text; track_ids: vec nat64; created_at: nat64; updated_at: nat64 });
+    "delete_playlist": (nat64) -> (bool);
+    "list_playlists": () -> (vec record { id: nat64; owner: principal; name: text; description: opt text; track_ids: vec nat64; created_at: nat64; updated_at: nat64 }) query;
+    "get_playlist": (nat64) -> (opt record { id: nat64; owner: principal; name: text; description: opt text; track_ids: vec nat64; created_at: nat64; updated_at: nat64 }) query;
+    // Track Download/Streaming Controls
+    "set_track_downloadable": (nat64, bool) -> (bool);
+    "can_download_track": (nat64) -> (bool) query;
+    "record_play": (nat64) -> (bool);
+    "record_download": (nat64) -> (bool);
+    "get_user_play_count": (nat64) -> (nat64) query;
+    "get_user_download_count": (nat64) -> (nat64) query;
+    // User-to-User Messaging
+    "send_message": (principal, text) -> (opt record { id: nat64; from: principal; to: principal; content: text; timestamp: nat64; read: bool });
+    "list_messages_with": (principal) -> (vec record { id: nat64; from: principal; to: principal; content: text; timestamp: nat64; read: bool }) query;
+    "mark_message_read": (nat64) -> (bool);
+    // --- Reporting & Moderation ---
+    report_content: (ReportTargetType, text, text, opt text) -> (opt Report) query;
+    list_reports: () -> (vec Report) query;
+    review_report: (nat64, ReportStatus, opt text) -> (bool) query;
+    // --- Track Licensing/Contracts ---
+    set_track_license: (nat64, LicenseType, opt text, opt text) -> (opt TrackLicense) query;
+    get_track_license: (nat64) -> (opt TrackLicense) query;
 }
