@@ -51,6 +51,8 @@ pub struct Track {
     pub invited: Vec<u64>, // user ids invited to collaborate
     pub roles: Vec<(u64, TrackRole)>, // user id, role
     pub ratings: Vec<(u64, u8)>, // user_id, rating (1-5)
+    pub tags: Vec<String>,
+    pub genre: Option<String>,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -92,7 +94,10 @@ fn greet(name: String) -> String {
 
 // Artist CRUD
 #[ic_cdk::update]
-fn register_artist(name: String, bio: String, social: Option<String>) -> Artist {
+fn register_artist(name: String, bio: String, social: Option<String>) -> Option<Artist> {
+    if name.trim().is_empty() {
+        return None;
+    }
     ARTISTS.with(|artists| {
         ARTIST_ID.with(|id| {
             let mut id_mut = id.borrow_mut();
@@ -105,7 +110,7 @@ fn register_artist(name: String, bio: String, social: Option<String>) -> Artist 
             };
             artists.borrow_mut().push(artist.clone());
             *id_mut += 1;
-            artist
+            Some(artist)
         })
     })
 }
@@ -136,7 +141,10 @@ fn list_artists() -> Vec<Artist> {
 
 // Track CRUD
 #[ic_cdk::update]
-fn create_track(title: String, description: String, contributors: Vec<u64>) -> Track {
+fn create_track(title: String, description: String, contributors: Vec<u64>) -> Option<Track> {
+    if title.trim().is_empty() || description.trim().is_empty() || contributors.is_empty() {
+        return None;
+    }
     let now = ic_cdk::api::time() / 1_000_000;
     let contributors_for_log = contributors.clone();
     TRACKS.with(|tracks| {
@@ -159,6 +167,8 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> T
                 invited: vec![],
                 roles,
                 ratings: vec![],
+                tags: vec![],
+                genre: None,
             };
             tracks.borrow_mut().push(track.clone());
             // Store initial version
@@ -177,7 +187,7 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> T
                 log_activity(cid, "create_track", now, &format!("Track {} created", track.id));
             }
             *id_mut += 1;
-            track
+            Some(track)
         })
     })
 }
@@ -494,5 +504,70 @@ fn get_user_track_rating(track_id: u64, user_id: u64) -> Option<u8> {
     TRACKS.with(|tracks| {
         tracks.borrow().iter().find(|t| t.id == track_id)
             .and_then(|t| t.ratings.iter().find(|(uid, _)| *uid == user_id).map(|(_, r)| *r))
+    })
+}
+
+// Add a tag to a track
+#[ic_cdk::update]
+fn add_tag(track_id: u64, tag: String) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            if !track.tags.contains(&tag) {
+                track.tags.push(tag);
+            }
+            return true;
+        }
+        false
+    })
+}
+
+// Remove a tag from a track
+#[ic_cdk::update]
+fn remove_tag(track_id: u64, tag: String) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            track.tags.retain(|t| t != &tag);
+            return true;
+        }
+        false
+    })
+}
+
+// Set genre for a track
+#[ic_cdk::update]
+fn set_genre(track_id: u64, genre: String) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            track.genre = Some(genre);
+            return true;
+        }
+        false
+    })
+}
+
+// Get genre for a track
+#[ic_cdk::query]
+fn get_genre(track_id: u64) -> Option<String> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id).and_then(|t| t.genre.clone())
+    })
+}
+
+// Search tracks by tag
+#[ic_cdk::query]
+fn search_tracks_by_tag(tag: String) -> Vec<Track> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().filter(|t| t.tags.contains(&tag)).cloned().collect()
+    })
+}
+
+// Search tracks by genre
+#[ic_cdk::query]
+fn search_tracks_by_genre(genre: String) -> Vec<Track> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().filter(|t| t.genre.as_ref().map(|g| g == &genre).unwrap_or(false)).cloned().collect()
     })
 }

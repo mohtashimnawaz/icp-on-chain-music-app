@@ -4,11 +4,26 @@ type Activity = record { user_id: nat64; action: text; timestamp: nat64; details
 
 service : {
     "greet": (text) -> (text) query;
-    "register_artist": (text, text, opt text) -> (record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 });
+    "register_artist": (text, text, opt text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 });
     "get_artist": (nat64) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 }) query;
     "update_artist": (nat64, text, text, opt text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 });
     "list_artists": () -> (vec record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 }) query;
-    "create_track": (text, text, vec nat64) -> (record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } });
+    "create_track": (text, text, vec nat64) -> (opt record {
+        id: nat64;
+        title: text;
+        description: text;
+        contributors: vec nat64;
+        version: nat32;
+        splits: opt vec record { id: nat64; pct: nat8 };
+        comments: vec record { commenter: nat64; text: text };
+        payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 };
+        visibility: TrackVisibility;
+        invited: vec nat64;
+        roles: vec record { 0: nat64; 1: TrackRole };
+        ratings: vec record { 0: nat64; 1: nat8 };
+        tags: vec text;
+        genre: opt text;
+    });
     "get_track": (nat64) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } }) query;
     "update_track": (nat64, text, text, vec nat64, nat32) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } });
     "list_tracks": () -> (vec record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } }) query;
@@ -34,4 +49,40 @@ service : {
     "rate_track": (nat64, nat64, nat8) -> (bool);
     "get_track_rating": (nat64) -> (nat32, nat8) query;
     "get_user_track_rating": (nat64, nat64) -> (opt nat8) query;
+    "add_tag": (nat64, text) -> (bool);
+    "remove_tag": (nat64, text) -> (bool);
+    "set_genre": (nat64, text) -> (bool);
+    "get_genre": (nat64) -> (opt text) query;
+    "search_tracks_by_tag": (text) -> (vec record {
+        id: nat64;
+        title: text;
+        description: text;
+        contributors: vec nat64;
+        version: nat32;
+        splits: opt vec record { id: nat64; pct: nat8 };
+        comments: vec record { commenter: nat64; text: text };
+        payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 };
+        visibility: TrackVisibility;
+        invited: vec nat64;
+        roles: vec record { 0: nat64; 1: TrackRole };
+        ratings: vec record { 0: nat64; 1: nat8 };
+        tags: vec text;
+        genre: opt text;
+    }) query;
+    "search_tracks_by_genre": (text) -> (vec record {
+        id: nat64;
+        title: text;
+        description: text;
+        contributors: vec nat64;
+        version: nat32;
+        splits: opt vec record { id: nat64; pct: nat8 };
+        comments: vec record { commenter: nat64; text: text };
+        payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 };
+        visibility: TrackVisibility;
+        invited: vec nat64;
+        roles: vec record { 0: nat64; 1: TrackRole };
+        ratings: vec record { 0: nat64; 1: nat8 };
+        tags: vec text;
+        genre: opt text;
+    }) query;
 }
