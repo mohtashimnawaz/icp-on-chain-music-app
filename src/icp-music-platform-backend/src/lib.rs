@@ -1150,50 +1150,93 @@ pub fn is_admin(principal: Principal) -> bool {
 pub fn ban_user(principal_to_ban: Principal) -> bool {
     let principal = caller();
     if !is_admin(principal) { return false; }
+    let mut success = false;
     USERS.with(|users| {
         let mut users = users.borrow_mut();
         if let Some(user) = users.iter_mut().find(|u| u.principal == principal_to_ban) {
             user.role = UserRole::User; // Or add a Banned role if desired
-            return true;
+            success = true;
         }
-        false
-    })
+    });
+    if success {
+        log_admin_action(
+            principal,
+            "ban_user",
+            "User",
+            &principal_to_ban.to_text(),
+            Some("User banned by admin".to_string()),
+        );
+    }
+    success
 }
 
 #[ic_cdk::update]
 pub fn delete_user_by_admin(principal_to_delete: Principal) -> bool {
     let principal = caller();
     if !is_admin(principal) { return false; }
+    let mut deleted = false;
     USERS.with(|users| {
         let mut users = users.borrow_mut();
         let len_before = users.len();
         users.retain(|u| u.principal != principal_to_delete);
-        users.len() < len_before
-    })
+        deleted = users.len() < len_before;
+    });
+    if deleted {
+        log_admin_action(
+            principal,
+            "delete_user_by_admin",
+            "User",
+            &principal_to_delete.to_text(),
+            Some("User deleted by admin".to_string()),
+        );
+    }
+    deleted
 }
 
 #[ic_cdk::update]
 pub fn delete_artist_by_admin(artist_id: u64) -> bool {
     let principal = caller();
     if !is_admin(principal) { return false; }
+    let mut deleted = false;
     ARTISTS.with(|artists| {
         let mut artists = artists.borrow_mut();
         let len_before = artists.len();
         artists.retain(|a| a.id != artist_id);
-        artists.len() < len_before
-    })
+        deleted = artists.len() < len_before;
+    });
+    if deleted {
+        log_admin_action(
+            principal,
+            "delete_artist_by_admin",
+            "Artist",
+            &artist_id.to_string(),
+            Some("Artist deleted by admin".to_string()),
+        );
+    }
+    deleted
 }
 
 #[ic_cdk::update]
 pub fn delete_track_by_admin(track_id: u64) -> bool {
     let principal = caller();
     if !is_admin(principal) { return false; }
+    let mut deleted = false;
     TRACKS.with(|tracks| {
         let mut tracks = tracks.borrow_mut();
         let len_before = tracks.len();
         tracks.retain(|t| t.id != track_id);
-        tracks.len() < len_before
-    })
+        deleted = tracks.len() < len_before;
+    });
+    if deleted {
+        log_admin_action(
+            principal,
+            "delete_track_by_admin",
+            "Track",
+            &track_id.to_string(),
+            Some("Track deleted by admin".to_string()),
+        );
+    }
+    deleted
 }
 
 // 3. Track/Artist Following
@@ -1559,21 +1602,35 @@ pub fn list_reports() -> Vec<Report> {
 pub fn review_report(report_id: u64, status: ReportStatus, resolution_notes: Option<String>) -> bool {
     let reviewer = caller();
     let now = ic_cdk::api::time() / 1_000_000;
-    // Only admin or moderator can review
     if !is_admin(reviewer) {
         return false;
     }
+    let mut success = false;
+    let mut target_type = String::new();
+    let mut target_id = String::new();
+    let status_for_log = status.clone();
     REPORTS.with(|r| {
         let mut r = r.borrow_mut();
         if let Some(report) = r.iter_mut().find(|rep| rep.id == report_id) {
             report.status = status;
             report.reviewed_by = Some(reviewer);
             report.reviewed_at = Some(now);
-            report.resolution_notes = resolution_notes;
-            return true;
+            report.resolution_notes = resolution_notes.clone();
+            target_type = format!("{:?}", report.target_type);
+            target_id = report.target_id.clone();
+            success = true;
         }
-        false
-    })
+    });
+    if success {
+        log_admin_action(
+            reviewer,
+            "review_report",
+            &target_type,
+            &target_id,
+            Some(format!("Report {} reviewed: {:?}", report_id, status_for_log)),
+        );
+    }
+    success
 }
 
 // --- Track Licensing/Contracts Endpoints ---
@@ -1695,17 +1752,32 @@ pub fn review_moderation_item(item_id: u64, status: ModerationStatus, notes: Opt
     if !is_admin(reviewer) {
         return false;
     }
+    let mut success = false;
+    let mut target_type = String::new();
+    let mut target_id = String::new();
+    let status_for_log = status.clone();
     MODERATION_QUEUE.with(|q| {
         let mut q = q.borrow_mut();
         if let Some(item) = q.iter_mut().find(|i| i.id == item_id) {
             item.status = status;
             item.reviewed_by = Some(reviewer);
             item.reviewed_at = Some(now);
-            item.notes = notes;
-            return true;
+            item.notes = notes.clone();
+            target_type = format!("{:?}", item.target_type);
+            target_id = item.target_id.clone();
+            success = true;
         }
-        false
-    })
+    });
+    if success {
+        log_admin_action(
+            reviewer,
+            "review_moderation_item",
+            &target_type,
+            &target_id,
+            Some(format!("Moderation item {} reviewed: {:?}", item_id, status_for_log)),
+        );
+    }
+    success
 }
 
 // --- Suspension & Appeals Endpoints ---
@@ -1724,9 +1796,9 @@ pub fn suspend_target(target_type: SuspensionTargetType, target_id: String, reas
     });
     let suspension = Suspension {
         id,
-        target_type,
-        target_id,
-        reason,
+        target_type: target_type.clone(),
+        target_id: target_id.clone(),
+        reason: reason.clone(),
         imposed_by,
         imposed_at: now,
         duration_secs,
@@ -1736,6 +1808,13 @@ pub fn suspend_target(target_type: SuspensionTargetType, target_id: String, reas
         notes: None,
     };
     SUSPENSIONS.with(|s| s.borrow_mut().push(suspension.clone()));
+    log_admin_action(
+        imposed_by,
+        "suspend_target",
+        &format!("{:?}", target_type),
+        &target_id,
+        Some(format!("Suspension imposed: {}", reason)),
+    );
     Some(suspension)
 }
 
@@ -1746,17 +1825,31 @@ pub fn lift_suspension(suspension_id: u64, notes: Option<String>) -> bool {
     if !is_admin(lifter) {
         return false;
     }
+    let mut success = false;
+    let mut target_type = String::new();
+    let mut target_id = String::new();
     SUSPENSIONS.with(|s| {
         let mut s = s.borrow_mut();
         if let Some(susp) = s.iter_mut().find(|s| s.id == suspension_id && s.status == SuspensionStatus::Active) {
             susp.status = SuspensionStatus::Lifted;
             susp.lifted_by = Some(lifter);
             susp.lifted_at = Some(now);
-            susp.notes = notes;
-            return true;
+            susp.notes = notes.clone();
+            target_type = format!("{:?}", susp.target_type);
+            target_id = susp.target_id.clone();
+            success = true;
         }
-        false
-    })
+    });
+    if success {
+        log_admin_action(
+            lifter,
+            "lift_suspension",
+            &target_type,
+            &target_id,
+            Some(format!("Suspension {} lifted", suspension_id)),
+        );
+    }
+    success
 }
 
 #[ic_cdk::query]
@@ -1796,17 +1889,30 @@ pub fn review_suspension_appeal(appeal_id: u64, status: AppealStatus, notes: Opt
     if !is_admin(reviewer) {
         return false;
     }
+    let mut success = false;
+    let mut suspension_id = 0u64;
+    let status_for_log = status.clone();
     SUSPENSION_APPEALS.with(|a| {
         let mut a = a.borrow_mut();
         if let Some(appeal) = a.iter_mut().find(|ap| ap.id == appeal_id) {
             appeal.status = status;
             appeal.reviewed_by = Some(reviewer);
             appeal.reviewed_at = Some(now);
-            appeal.notes = notes;
-            return true;
+            appeal.notes = notes.clone();
+            suspension_id = appeal.suspension_id;
+            success = true;
         }
-        false
-    })
+    });
+    if success {
+        log_admin_action(
+            reviewer,
+            "review_suspension_appeal",
+            "SuspensionAppeal",
+            &suspension_id.to_string(),
+            Some(format!("Appeal {} reviewed: {:?}", appeal_id, status_for_log)),
+        );
+    }
+    success
 }
 
 #[ic_cdk::query]
