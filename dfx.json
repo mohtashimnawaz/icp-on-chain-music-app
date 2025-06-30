@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "icp-music-platform-backend": {
+      "candid": "src/icp-music-platform-backend/icp-music-platform-backend.did",
+      "package": "icp-music-platform-backend",
+      "type": "rust"
+    },
+    "icp-music-platform-frontend": {
+      "dependencies": [
+        "icp-music-platform-backend"
+      ],
+      "source": [
+        "src/icp-music-platform-frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "icp-music-platform-frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
