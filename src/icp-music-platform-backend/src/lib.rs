@@ -8,6 +8,7 @@ pub struct Artist {
     pub name: String,
     pub bio: String,
     pub social: Option<String>,
+    pub royalty_balance: u64,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -31,6 +32,7 @@ pub struct Track {
     pub version: u32,
     pub splits: Option<Vec<Split>>,
     pub comments: Vec<Comment>,
+    pub payments: Vec<Payment>,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -39,6 +41,13 @@ pub struct TrackVersion {
     pub title: String,
     pub description: String,
     pub contributors: Vec<u64>,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Payment {
+    pub payer: u64, // artist id or user id
+    pub amount: u64, // in smallest unit (e.g., tokens)
+    pub timestamp: u64,
 }
 
 thread_local! {
@@ -65,6 +74,7 @@ fn register_artist(name: String, bio: String, social: Option<String>) -> Artist 
                 name,
                 bio,
                 social,
+                royalty_balance: 0,
             };
             artists.borrow_mut().push(artist.clone());
             *id_mut += 1;
@@ -111,6 +121,7 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> T
                 version: 1,
                 splits: None,
                 comments: vec![],
+                payments: vec![],
             };
             tracks.borrow_mut().push(track.clone());
             // Store initial version
@@ -265,4 +276,44 @@ fn delete_track(track_id: u64) -> bool {
         tv.retain(|(id, _)| *id != track_id);
     });
     deleted
+}
+
+// Distribute payment for a track
+#[ic_cdk::update]
+fn distribute_payment(track_id: u64, payer: u64, amount: u64, timestamp: u64) -> bool {
+    let mut distributed = false;
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            if let Some(splits) = &track.splits {
+                for split in splits {
+                    let share = amount * (split.pct as u64) / 100;
+                    ARTISTS.with(|artists| {
+                        if let Some(artist) = artists.borrow_mut().iter_mut().find(|a| a.id == split.id) {
+                            artist.royalty_balance += share;
+                        }
+                    });
+                }
+                track.payments.push(Payment { payer, amount, timestamp });
+                distributed = true;
+            }
+        }
+    });
+    distributed
+}
+
+// View artist royalty balance
+#[ic_cdk::query]
+fn get_royalty_balance(artist_id: u64) -> u64 {
+    ARTISTS.with(|artists| {
+        artists.borrow().iter().find(|a| a.id == artist_id).map(|a| a.royalty_balance).unwrap_or(0)
+    })
+}
+
+// View payment history for a track
+#[ic_cdk::query]
+fn get_payment_history(track_id: u64) -> Vec<Payment> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id).map(|t| t.payments.clone()).unwrap_or_default()
+    })
 }
