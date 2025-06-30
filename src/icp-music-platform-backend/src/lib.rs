@@ -164,21 +164,24 @@ fn register_artist(name: String, bio: String, social: Option<String>, profile_im
     if name.trim().is_empty() {
         return None;
     }
+    let principal = caller();
     ARTISTS.with(|artists| {
         ARTIST_ID.with(|id| {
             let mut id_mut = id.borrow_mut();
             let artist = Artist {
                 id: *id_mut,
-                name,
-                bio,
-                social,
+                name: name.clone(),
+                bio: bio.clone(),
+                social: social.clone(),
                 royalty_balance: 0,
-                profile_image_url,
-                links,
-                user_principal: caller(),
+                profile_image_url: profile_image_url.clone(),
+                links: links.clone(),
+                user_principal: principal,
             };
             artists.borrow_mut().push(artist.clone());
             *id_mut += 1;
+            let now = ic_cdk::api::time() / 1_000_000;
+            log_user_activity(principal, "register_artist", now, &format!("Registered artist: {}", name));
             Some(artist)
         })
     })
@@ -191,14 +194,17 @@ fn get_artist(id: u64) -> Option<Artist> {
 
 #[ic_cdk::update]
 fn update_artist(id: u64, name: String, bio: String, social: Option<String>, profile_image_url: Option<String>, links: Option<Vec<String>>) -> Option<Artist> {
+    let principal = caller();
     ARTISTS.with(|artists| {
         let mut artists = artists.borrow_mut();
         if let Some(artist) = artists.iter_mut().find(|a| a.id == id) {
-            artist.name = name;
-            artist.bio = bio;
-            artist.social = social;
-            artist.profile_image_url = profile_image_url;
-            artist.links = links;
+            artist.name = name.clone();
+            artist.bio = bio.clone();
+            artist.social = social.clone();
+            artist.profile_image_url = profile_image_url.clone();
+            artist.links = links.clone();
+            let now = ic_cdk::api::time() / 1_000_000;
+            log_user_activity(principal, "update_artist", now, &format!("Updated artist: {}", name));
             return Some(artist.clone());
         }
         None
@@ -836,12 +842,14 @@ fn register_user(username: String, bio: Option<String>, avatar_url: Option<Strin
         }
         let user = User {
             principal,
-            username,
-            bio,
-            avatar_url,
+            username: username.clone(),
+            bio: bio.clone(),
+            avatar_url: avatar_url.clone(),
             role: UserRole::User,
         };
         users.push(user.clone());
+        let now = ic_cdk::api::time() / 1_000_000;
+        log_user_activity(principal, "register_user", now, &format!("Registered user: {}", username));
         Some(user)
     })
 }
@@ -858,9 +866,11 @@ fn update_user(username: String, bio: Option<String>, avatar_url: Option<String>
     USERS.with(|users| {
         let mut users = users.borrow_mut();
         if let Some(user) = users.iter_mut().find(|u| u.principal == principal) {
-            user.username = username;
-            user.bio = bio;
-            user.avatar_url = avatar_url;
+            user.username = username.clone();
+            user.bio = bio.clone();
+            user.avatar_url = avatar_url.clone();
+            let now = ic_cdk::api::time() / 1_000_000;
+            log_user_activity(principal, "update_user", now, &format!("Updated user: {}", username));
             return Some(user.clone());
         }
         None
@@ -874,7 +884,12 @@ fn delete_user() -> bool {
         let mut users = users.borrow_mut();
         let len_before = users.len();
         users.retain(|u| u.principal != principal);
-        users.len() < len_before
+        let deleted = users.len() < len_before;
+        if deleted {
+            let now = ic_cdk::api::time() / 1_000_000;
+            log_user_activity(principal, "delete_user", now, "Deleted user profile");
+        }
+        deleted
     })
 }
 
@@ -898,33 +913,6 @@ fn search_users_by_username(query: String) -> Vec<User> {
         users.borrow().iter().filter(|u| u.username.to_lowercase().contains(&q)).cloned().collect()
     })
 }
-
-// 4. User roles
-#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
-pub enum UserRole {
-    User,
-    Admin,
-    Moderator,
-}
-
-// Update User struct to include role
-// (NOTE: This requires updating all User creation and update logic)
-// pub struct User {
-//     pub principal: Principal,
-//     pub username: String,
-//     pub bio: Option<String>,
-//     pub avatar_url: Option<String>,
-//     pub role: UserRole,
-// }
-
-// 5. Link artists to users
-// - Add user_principal: Principal to Artist
-// - Update register_artist to require authentication and link to user
-// pub struct Artist {
-//     pub id: u64,
-//     pub user_principal: Principal,
-//     ...
-// }
 
 // 6. User activity log
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -951,4 +939,11 @@ fn get_user_activity_log(principal: Principal) -> Vec<UserActivity> {
     USER_ACTIVITY_LOG.with(|log| {
         log.borrow().iter().filter(|a| a.principal == principal).cloned().collect()
     })
+}
+
+#[ic_cdk::update]
+fn add_dummy_activity() {
+    let principal = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    log_user_activity(principal, "dummy_action", now, "This is a test activity");
 }
