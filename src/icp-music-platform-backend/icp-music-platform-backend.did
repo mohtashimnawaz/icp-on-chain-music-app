@@ -31,4 +31,7 @@ service : {
     "get_user_role": (nat64, nat64) -> (opt TrackRole) query;
     "get_user_activity": (nat64) -> (vec Activity) query;
     "get_recent_activity": (nat32) -> (vec Activity) query;
+    "rate_track": (nat64, nat64, nat8) -> (bool);
+    "get_track_rating": (nat64) -> (nat32, nat8) query;
+    "get_user_track_rating": (nat64, nat64) -> (opt nat8) query;
 }

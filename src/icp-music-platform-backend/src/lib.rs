@@ -50,6 +50,7 @@ pub struct Track {
     pub visibility: TrackVisibility,
     pub invited: Vec<u64>, // user ids invited to collaborate
     pub roles: Vec<(u64, TrackRole)>, // user id, role
+    pub ratings: Vec<(u64, u8)>, // user_id, rating (1-5)
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -157,6 +158,7 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> T
                 visibility: TrackVisibility::Public,
                 invited: vec![],
                 roles,
+                ratings: vec![],
             };
             tracks.borrow_mut().push(track.clone());
             // Store initial version
@@ -450,5 +452,47 @@ fn get_recent_activity(count: u32) -> Vec<Activity> {
         let len = log.len();
         let start = if len > count as usize { len - count as usize } else { 0 };
         log[start..].to_vec()
+    })
+}
+
+// Rate a track
+#[ic_cdk::update]
+fn rate_track(track_id: u64, user_id: u64, rating: u8) -> bool {
+    if rating < 1 || rating > 5 {
+        return false;
+    }
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            if let Some(r) = track.ratings.iter_mut().find(|(uid, _)| *uid == user_id) {
+                r.1 = rating;
+            } else {
+                track.ratings.push((user_id, rating));
+            }
+            return true;
+        }
+        false
+    })
+}
+
+// Get average rating and count for a track
+#[ic_cdk::query]
+fn get_track_rating(track_id: u64) -> (u32, u8) {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id).map(|t| {
+            let count = t.ratings.len() as u32;
+            let sum: u32 = t.ratings.iter().map(|(_, r)| *r as u32).sum();
+            let avg = if count > 0 { (sum / count) as u8 } else { 0 };
+            (count, avg)
+        }).unwrap_or((0, 0))
+    })
+}
+
+// Get a user's rating for a track
+#[ic_cdk::query]
+fn get_user_track_rating(track_id: u64, user_id: u64) -> Option<u8> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id)
+            .and_then(|t| t.ratings.iter().find(|(uid, _)| *uid == user_id).map(|(_, r)| *r))
     })
 }
