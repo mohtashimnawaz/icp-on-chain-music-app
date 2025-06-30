@@ -219,6 +219,96 @@ pub struct RateLimitEntry {
     pub window_start: u64,
 }
 
+// --- Audit Log & Admin Actions History ---
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct AuditLogEntry {
+    pub id: u64,
+    pub admin: Principal,
+    pub action: String,
+    pub target_type: String,
+    pub target_id: String,
+    pub timestamp: u64,
+    pub details: Option<String>,
+}
+
+// --- Content Moderation Queue ---
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum ModerationTargetType {
+    Track,
+    Comment,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum ModerationStatus {
+    Pending,
+    Approved,
+    Removed,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct ModerationQueueItem {
+    pub id: u64,
+    pub target_type: ModerationTargetType,
+    pub target_id: String,
+    pub flagged_by: Option<Principal>,
+    pub reason: String,
+    pub status: ModerationStatus,
+    pub created_at: u64,
+    pub reviewed_by: Option<Principal>,
+    pub reviewed_at: Option<u64>,
+    pub notes: Option<String>,
+}
+
+// --- Suspension & Appeals ---
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum SuspensionTargetType {
+    User,
+    Artist,
+    Track,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum SuspensionStatus {
+    Active,
+    Lifted,
+    Expired,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Suspension {
+    pub id: u64,
+    pub target_type: SuspensionTargetType,
+    pub target_id: String,
+    pub reason: String,
+    pub imposed_by: Principal,
+    pub imposed_at: u64,
+    pub duration_secs: Option<u64>,
+    pub status: SuspensionStatus,
+    pub lifted_by: Option<Principal>,
+    pub lifted_at: Option<u64>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum AppealStatus {
+    Pending,
+    Approved,
+    Denied,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct SuspensionAppeal {
+    pub id: u64,
+    pub suspension_id: u64,
+    pub submitted_by: Principal,
+    pub submitted_at: u64,
+    pub content: String,
+    pub status: AppealStatus,
+    pub reviewed_by: Option<Principal>,
+    pub reviewed_at: Option<u64>,
+    pub notes: Option<String>,
+}
+
 thread_local! {
     static ARTISTS: RefCell<Vec<Artist>> = RefCell::new(Vec::new());
     static TRACKS: RefCell<Vec<Track>> = RefCell::new(Vec::new());
@@ -245,6 +335,14 @@ thread_local! {
     static REPORT_ID: RefCell<u64> = RefCell::new(1);
     static TRACK_LICENSES: RefCell<Vec<TrackLicense>> = RefCell::new(Vec::new());
     static RATE_LIMITS: RefCell<Vec<RateLimitEntry>> = RefCell::new(Vec::new());
+    static AUDIT_LOG: RefCell<Vec<AuditLogEntry>> = RefCell::new(Vec::new());
+    static AUDIT_LOG_ID: RefCell<u64> = RefCell::new(1);
+    static MODERATION_QUEUE: RefCell<Vec<ModerationQueueItem>> = RefCell::new(Vec::new());
+    static MODERATION_QUEUE_ID: RefCell<u64> = RefCell::new(1);
+    static SUSPENSIONS: RefCell<Vec<Suspension>> = RefCell::new(Vec::new());
+    static SUSPENSION_ID: RefCell<u64> = RefCell::new(1);
+    static SUSPENSION_APPEALS: RefCell<Vec<SuspensionAppeal>> = RefCell::new(Vec::new());
+    static SUSPENSION_APPEAL_ID: RefCell<u64> = RefCell::new(1);
 }
 
 #[ic_cdk::query]
@@ -1532,4 +1630,186 @@ fn check_rate_limit(principal: Principal, max_calls: u32, window_secs: u64) -> b
         }
     });
     allowed
+}
+
+// --- Audit Log Endpoints ---
+fn log_admin_action(admin: Principal, action: &str, target_type: &str, target_id: &str, details: Option<String>) {
+    let now = ic_cdk::api::time() / 1_000_000;
+    AUDIT_LOG_ID.with(|aid| {
+        let mut aid = aid.borrow_mut();
+        let entry = AuditLogEntry {
+            id: *aid,
+            admin,
+            action: action.to_string(),
+            target_type: target_type.to_string(),
+            target_id: target_id.to_string(),
+            timestamp: now,
+            details,
+        };
+        AUDIT_LOG.with(|log| log.borrow_mut().push(entry));
+        *aid += 1;
+    });
+}
+
+#[ic_cdk::query]
+pub fn list_audit_log() -> Vec<AuditLogEntry> {
+    AUDIT_LOG.with(|log| log.borrow().clone())
+}
+
+// --- Moderation Queue Endpoints ---
+#[ic_cdk::update]
+pub fn flag_content_for_moderation(target_type: ModerationTargetType, target_id: String, reason: String) -> Option<ModerationQueueItem> {
+    let flagged_by = Some(caller());
+    let now = ic_cdk::api::time() / 1_000_000;
+    let id = MODERATION_QUEUE_ID.with(|mid| {
+        let mut mid = mid.borrow_mut();
+        let id = *mid;
+        *mid += 1;
+        id
+    });
+    let item = ModerationQueueItem {
+        id,
+        target_type,
+        target_id,
+        flagged_by,
+        reason,
+        status: ModerationStatus::Pending,
+        created_at: now,
+        reviewed_by: None,
+        reviewed_at: None,
+        notes: None,
+    };
+    MODERATION_QUEUE.with(|q| q.borrow_mut().push(item.clone()));
+    Some(item)
+}
+
+#[ic_cdk::query]
+pub fn list_moderation_queue() -> Vec<ModerationQueueItem> {
+    MODERATION_QUEUE.with(|q| q.borrow().clone())
+}
+
+#[ic_cdk::update]
+pub fn review_moderation_item(item_id: u64, status: ModerationStatus, notes: Option<String>) -> bool {
+    let reviewer = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    if !is_admin(reviewer) {
+        return false;
+    }
+    MODERATION_QUEUE.with(|q| {
+        let mut q = q.borrow_mut();
+        if let Some(item) = q.iter_mut().find(|i| i.id == item_id) {
+            item.status = status;
+            item.reviewed_by = Some(reviewer);
+            item.reviewed_at = Some(now);
+            item.notes = notes;
+            return true;
+        }
+        false
+    })
+}
+
+// --- Suspension & Appeals Endpoints ---
+#[ic_cdk::update]
+pub fn suspend_target(target_type: SuspensionTargetType, target_id: String, reason: String, duration_secs: Option<u64>) -> Option<Suspension> {
+    let imposed_by = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    if !is_admin(imposed_by) {
+        return None;
+    }
+    let id = SUSPENSION_ID.with(|sid| {
+        let mut sid = sid.borrow_mut();
+        let id = *sid;
+        *sid += 1;
+        id
+    });
+    let suspension = Suspension {
+        id,
+        target_type,
+        target_id,
+        reason,
+        imposed_by,
+        imposed_at: now,
+        duration_secs,
+        status: SuspensionStatus::Active,
+        lifted_by: None,
+        lifted_at: None,
+        notes: None,
+    };
+    SUSPENSIONS.with(|s| s.borrow_mut().push(suspension.clone()));
+    Some(suspension)
+}
+
+#[ic_cdk::update]
+pub fn lift_suspension(suspension_id: u64, notes: Option<String>) -> bool {
+    let lifter = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    if !is_admin(lifter) {
+        return false;
+    }
+    SUSPENSIONS.with(|s| {
+        let mut s = s.borrow_mut();
+        if let Some(susp) = s.iter_mut().find(|s| s.id == suspension_id && s.status == SuspensionStatus::Active) {
+            susp.status = SuspensionStatus::Lifted;
+            susp.lifted_by = Some(lifter);
+            susp.lifted_at = Some(now);
+            susp.notes = notes;
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::query]
+pub fn list_suspensions() -> Vec<Suspension> {
+    SUSPENSIONS.with(|s| s.borrow().clone())
+}
+
+#[ic_cdk::update]
+pub fn submit_suspension_appeal(suspension_id: u64, content: String) -> Option<SuspensionAppeal> {
+    let submitted_by = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    let id = SUSPENSION_APPEAL_ID.with(|aid| {
+        let mut aid = aid.borrow_mut();
+        let id = *aid;
+        *aid += 1;
+        id
+    });
+    let appeal = SuspensionAppeal {
+        id,
+        suspension_id,
+        submitted_by,
+        submitted_at: now,
+        content,
+        status: AppealStatus::Pending,
+        reviewed_by: None,
+        reviewed_at: None,
+        notes: None,
+    };
+    SUSPENSION_APPEALS.with(|a| a.borrow_mut().push(appeal.clone()));
+    Some(appeal)
+}
+
+#[ic_cdk::update]
+pub fn review_suspension_appeal(appeal_id: u64, status: AppealStatus, notes: Option<String>) -> bool {
+    let reviewer = caller();
+    let now = ic_cdk::api::time() / 1_000_000;
+    if !is_admin(reviewer) {
+        return false;
+    }
+    SUSPENSION_APPEALS.with(|a| {
+        let mut a = a.borrow_mut();
+        if let Some(appeal) = a.iter_mut().find(|ap| ap.id == appeal_id) {
+            appeal.status = status;
+            appeal.reviewed_by = Some(reviewer);
+            appeal.reviewed_at = Some(now);
+            appeal.notes = notes;
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::query]
+pub fn list_suspension_appeals() -> Vec<SuspensionAppeal> {
+    SUSPENSION_APPEALS.with(|a| a.borrow().clone())
 }
