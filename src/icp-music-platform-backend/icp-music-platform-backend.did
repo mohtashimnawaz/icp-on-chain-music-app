@@ -26,6 +26,14 @@ type Task = record {
   updated_at: nat64;
 };
 
+type TrackAnalytics = record {
+  play_count: nat64;
+  revenue: nat64;
+  comments_count: nat64;
+  ratings_count: nat64;
+  avg_rating: nat8;
+};
+
 service : {
     "greet": (text) -> (text) query;
     "register_artist": (text, text, opt text, opt text, opt vec text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64; profile_image_url: opt text; links: opt vec text });
@@ -47,6 +55,7 @@ service : {
         ratings: vec record { 0: nat64; 1: nat8 };
         tags: vec text;
         genre: opt text;
+        play_count: nat64;
     });
     "get_track": (nat64) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } }) query;
     "update_track": (nat64, text, text, vec nat64, nat32) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } });
@@ -118,4 +127,7 @@ service : {
     "update_task_status": (nat64, TaskStatus) -> (opt Task);
     "list_tasks_for_track": (nat64) -> (vec Task) query;
     "list_tasks_for_user": (nat64) -> (vec Task) query;
+    "withdraw_royalties": (nat64, nat64) -> (bool);
+    "increment_play_count": (nat64) -> (bool);
+    "get_track_analytics": (nat64) -> (opt TrackAnalytics) query;
 }

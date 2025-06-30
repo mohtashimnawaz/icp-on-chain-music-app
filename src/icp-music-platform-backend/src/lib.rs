@@ -55,6 +55,7 @@ pub struct Track {
     pub ratings: Vec<(u64, u8)>, // user_id, rating (1-5)
     pub tags: Vec<String>,
     pub genre: Option<String>,
+    pub play_count: u64, // new field for analytics
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -217,6 +218,7 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> O
                 ratings: vec![],
                 tags: vec![],
                 genre: None,
+                play_count: 0,
             };
             tracks.borrow_mut().push(track.clone());
             // Store initial version
@@ -393,16 +395,26 @@ fn distribute_payment(track_id: u64, payer: u64, amount: u64, timestamp: u64) ->
             if let Some(splits) = &track.splits {
                 for split in splits {
                     let share = amount * (split.pct as u64) / 100;
+                    // Debug: log split info
+                    ic_cdk::println!("Distributing {} to artist {} ({}%)", share, split.id, split.pct);
                     ARTISTS.with(|artists| {
-                        if let Some(artist) = artists.borrow_mut().iter_mut().find(|a| a.id == split.id) {
+                        let mut artists = artists.borrow_mut();
+                        if let Some(artist) = artists.iter_mut().find(|a| a.id == split.id) {
                             artist.royalty_balance += share;
+                            ic_cdk::println!("Updated artist {} balance: {}", artist.id, artist.royalty_balance);
+                        } else {
+                            ic_cdk::println!("Artist {} not found for royalty distribution", split.id);
                         }
                     });
                 }
                 track.payments.push(Payment { payer, amount, timestamp });
                 distributed = true;
                 log_activity(payer, "distribute_payment", timestamp, &format!("Paid {} for track {}", amount, track_id));
+            } else {
+                ic_cdk::println!("No splits set for track {}", track_id);
             }
+        } else {
+            ic_cdk::println!("Track {} not found for payment distribution", track_id);
         }
     });
     distributed
@@ -721,5 +733,69 @@ fn list_tasks_for_track(track_id: u64) -> Vec<Task> {
 fn list_tasks_for_user(user_id: u64) -> Vec<Task> {
     TASKS.with(|tasks| {
         tasks.borrow().iter().filter(|t| t.assigned_to == user_id).cloned().collect()
+    })
+}
+
+// Royalty withdrawal endpoint
+#[ic_cdk::update]
+fn withdraw_royalties(artist_id: u64, amount: u64) -> bool {
+    if amount == 0 {
+        return false;
+    }
+    ARTISTS.with(|artists| {
+        let mut artists = artists.borrow_mut();
+        if let Some(artist) = artists.iter_mut().find(|a| a.id == artist_id) {
+            if artist.royalty_balance >= amount {
+                artist.royalty_balance -= amount;
+                let now = ic_cdk::api::time() / 1_000_000;
+                log_activity(artist_id, "withdraw_royalties", now, &format!("Withdrew {} tokens", amount));
+                // In production, integrate with ICP ledger here
+                return true;
+            }
+        }
+        false
+    })
+}
+
+// Analytics: increment play count
+#[ic_cdk::update]
+fn increment_play_count(track_id: u64) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            track.play_count += 1;
+            return true;
+        }
+        false
+    })
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TrackAnalytics {
+    pub play_count: u64,
+    pub revenue: u64,
+    pub comments_count: u64,
+    pub ratings_count: u64,
+    pub avg_rating: u8,
+}
+
+#[ic_cdk::query]
+fn get_track_analytics(track_id: u64) -> Option<TrackAnalytics> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id).map(|t| {
+            let revenue: u64 = t.payments.iter().map(|p| p.amount).sum();
+            let comments_count = t.comments.len() as u64;
+            let ratings_count = t.ratings.len() as u64;
+            let avg_rating = if ratings_count > 0 {
+                (t.ratings.iter().map(|(_, r)| *r as u32).sum::<u32>() / ratings_count as u32) as u8
+            } else { 0 };
+            TrackAnalytics {
+                play_count: t.play_count,
+                revenue,
+                comments_count,
+                ratings_count,
+                avg_rating,
+            }
+        })
     })
 }
