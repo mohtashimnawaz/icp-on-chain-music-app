@@ -23,6 +23,20 @@ pub struct Split {
     pub pct: u8, // percentage
 }
 
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum TrackVisibility {
+    Public,
+    Private,
+    InviteOnly,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum TrackRole {
+    Owner,
+    Collaborator,
+    Viewer,
+}
+
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct Track {
     pub id: u64,
@@ -33,6 +47,9 @@ pub struct Track {
     pub splits: Option<Vec<Split>>,
     pub comments: Vec<Comment>,
     pub payments: Vec<Payment>,
+    pub visibility: TrackVisibility,
+    pub invited: Vec<u64>, // user ids invited to collaborate
+    pub roles: Vec<(u64, TrackRole)>, // user id, role
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -113,6 +130,10 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> T
     TRACKS.with(|tracks| {
         TRACK_ID.with(|id| {
             let mut id_mut = id.borrow_mut();
+            let mut roles = vec![];
+            for &cid in &contributors {
+                roles.push((cid, TrackRole::Owner));
+            }
             let track = Track {
                 id: *id_mut,
                 title: title.clone(),
@@ -122,6 +143,9 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> T
                 splits: None,
                 comments: vec![],
                 payments: vec![],
+                visibility: TrackVisibility::Public,
+                invited: vec![],
+                roles,
             };
             tracks.borrow_mut().push(track.clone());
             // Store initial version
@@ -315,5 +339,67 @@ fn get_royalty_balance(artist_id: u64) -> u64 {
 fn get_payment_history(track_id: u64) -> Vec<Payment> {
     TRACKS.with(|tracks| {
         tracks.borrow().iter().find(|t| t.id == track_id).map(|t| t.payments.clone()).unwrap_or_default()
+    })
+}
+
+// Set track visibility
+#[ic_cdk::update]
+fn set_track_visibility(track_id: u64, visibility: TrackVisibility) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            track.visibility = visibility;
+            return true;
+        }
+        false
+    })
+}
+
+// Get track visibility
+#[ic_cdk::query]
+fn get_track_visibility(track_id: u64) -> Option<TrackVisibility> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id).map(|t| t.visibility.clone())
+    })
+}
+
+// Invite user to track
+#[ic_cdk::update]
+fn invite_user(track_id: u64, user_id: u64) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            if !track.invited.contains(&user_id) {
+                track.invited.push(user_id);
+            }
+            return true;
+        }
+        false
+    })
+}
+
+// Assign role to user
+#[ic_cdk::update]
+fn assign_role(track_id: u64, user_id: u64, role: TrackRole) -> bool {
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
+            if let Some(r) = track.roles.iter_mut().find(|(id, _)| *id == user_id) {
+                r.1 = role;
+            } else {
+                track.roles.push((user_id, role));
+            }
+            return true;
+        }
+        false
+    })
+}
+
+// Get user role for a track
+#[ic_cdk::query]
+fn get_user_role(track_id: u64, user_id: u64) -> Option<TrackRole> {
+    TRACKS.with(|tracks| {
+        tracks.borrow().iter().find(|t| t.id == track_id)
+            .and_then(|track| track.roles.iter().find(|(id, _)| *id == user_id).map(|(_, role)| role.clone()))
     })
 }

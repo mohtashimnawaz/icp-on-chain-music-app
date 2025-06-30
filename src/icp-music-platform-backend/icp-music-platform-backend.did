@@ -1,3 +1,6 @@
+type TrackVisibility = variant { Public; Private; InviteOnly };
+type TrackRole = variant { Owner; Collaborator; Viewer };
+
 service : {
     "greet": (text) -> (text) query;
     "register_artist": (text, text, opt text) -> (record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64 });
@@ -20,4 +23,9 @@ service : {
     "distribute_payment": (nat64, nat64, nat64, nat64) -> (bool);
     "get_royalty_balance": (nat64) -> (nat64) query;
     "get_payment_history": (nat64) -> (vec record { payer: nat64; amount: nat64; timestamp: nat64 }) query;
+    "set_track_visibility": (nat64, TrackVisibility) -> (bool);
+    "get_track_visibility": (nat64) -> (opt TrackVisibility) query;
+    "invite_user": (nat64, nat64) -> (bool);
+    "assign_role": (nat64, nat64, TrackRole) -> (bool);
+    "get_user_role": (nat64, nat64) -> (opt TrackRole) query;
 }
