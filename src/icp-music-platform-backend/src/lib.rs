@@ -138,6 +138,16 @@ pub enum UserRole {
     Moderator,
 }
 
+// 1. Notifications System
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Notification {
+    pub id: u64,
+    pub user_principal: Principal,
+    pub message: String,
+    pub timestamp: u64,
+    pub read: bool,
+}
+
 thread_local! {
     static ARTISTS: RefCell<Vec<Artist>> = RefCell::new(Vec::new());
     static TRACKS: RefCell<Vec<Track>> = RefCell::new(Vec::new());
@@ -151,6 +161,10 @@ thread_local! {
     static TASK_ID: RefCell<u64> = RefCell::new(1);
     static USERS: RefCell<Vec<User>> = RefCell::new(Vec::new());
     static USER_ACTIVITY_LOG: RefCell<Vec<UserActivity>> = RefCell::new(Vec::new());
+    static NOTIFICATIONS: RefCell<Vec<Notification>> = RefCell::new(Vec::new());
+    static NOTIFICATION_ID: RefCell<u64> = RefCell::new(1);
+    static FOLLOWED_ARTISTS: RefCell<Vec<(Principal, Vec<Principal>)>> = RefCell::new(Vec::new());
+    static FOLLOWED_TRACKS: RefCell<Vec<(Principal, Vec<u64>)>> = RefCell::new(Vec::new());
 }
 
 #[ic_cdk::query]
@@ -946,4 +960,187 @@ fn add_dummy_activity() {
     let principal = caller();
     let now = ic_cdk::api::time() / 1_000_000;
     log_user_activity(principal, "dummy_action", now, "This is a test activity");
+}
+
+// 2. Audit/Admin Tools
+pub fn is_admin(principal: Principal) -> bool {
+    USERS.with(|users| users.borrow().iter().any(|u| u.principal == principal && u.role == UserRole::Admin))
+}
+
+#[ic_cdk::update]
+pub fn ban_user(principal_to_ban: Principal) -> bool {
+    let principal = caller();
+    if !is_admin(principal) { return false; }
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        if let Some(user) = users.iter_mut().find(|u| u.principal == principal_to_ban) {
+            user.role = UserRole::User; // Or add a Banned role if desired
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::update]
+pub fn delete_user_by_admin(principal_to_delete: Principal) -> bool {
+    let principal = caller();
+    if !is_admin(principal) { return false; }
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        let len_before = users.len();
+        users.retain(|u| u.principal != principal_to_delete);
+        users.len() < len_before
+    })
+}
+
+#[ic_cdk::update]
+pub fn delete_artist_by_admin(artist_id: u64) -> bool {
+    let principal = caller();
+    if !is_admin(principal) { return false; }
+    ARTISTS.with(|artists| {
+        let mut artists = artists.borrow_mut();
+        let len_before = artists.len();
+        artists.retain(|a| a.id != artist_id);
+        artists.len() < len_before
+    })
+}
+
+#[ic_cdk::update]
+pub fn delete_track_by_admin(track_id: u64) -> bool {
+    let principal = caller();
+    if !is_admin(principal) { return false; }
+    TRACKS.with(|tracks| {
+        let mut tracks = tracks.borrow_mut();
+        let len_before = tracks.len();
+        tracks.retain(|t| t.id != track_id);
+        tracks.len() < len_before
+    })
+}
+
+// 3. Track/Artist Following
+#[ic_cdk::update]
+pub fn follow_artist(artist_principal: Principal) -> bool {
+    let principal = caller();
+    FOLLOWED_ARTISTS.with(|fa| {
+        let mut fa = fa.borrow_mut();
+        if let Some((p, artists)) = fa.iter_mut().find(|(p, _)| *p == principal) {
+            if !artists.contains(&artist_principal) {
+                artists.push(artist_principal);
+            }
+        } else {
+            fa.push((principal, vec![artist_principal]));
+        }
+        true
+    })
+}
+
+#[ic_cdk::update]
+pub fn unfollow_artist(artist_principal: Principal) -> bool {
+    let principal = caller();
+    FOLLOWED_ARTISTS.with(|fa| {
+        let mut fa = fa.borrow_mut();
+        if let Some((p, artists)) = fa.iter_mut().find(|(p, _)| *p == principal) {
+            artists.retain(|a| a != &artist_principal);
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::query]
+pub fn list_followed_artists() -> Vec<Principal> {
+    let principal = caller();
+    FOLLOWED_ARTISTS.with(|fa| {
+        fa.borrow().iter().find(|(p, _)| *p == principal).map(|(_, artists)| artists.clone()).unwrap_or_default()
+    })
+}
+
+#[ic_cdk::update]
+pub fn follow_track(track_id: u64) -> bool {
+    let principal = caller();
+    FOLLOWED_TRACKS.with(|ft| {
+        let mut ft = ft.borrow_mut();
+        if let Some((p, tracks)) = ft.iter_mut().find(|(p, _)| *p == principal) {
+            if !tracks.contains(&track_id) {
+                tracks.push(track_id);
+            }
+        } else {
+            ft.push((principal, vec![track_id]));
+        }
+        true
+    })
+}
+
+#[ic_cdk::update]
+pub fn unfollow_track(track_id: u64) -> bool {
+    let principal = caller();
+    FOLLOWED_TRACKS.with(|ft| {
+        let mut ft = ft.borrow_mut();
+        if let Some((p, tracks)) = ft.iter_mut().find(|(p, _)| *p == principal) {
+            tracks.retain(|t| t != &track_id);
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::query]
+pub fn list_followed_tracks() -> Vec<u64> {
+    let principal = caller();
+    FOLLOWED_TRACKS.with(|ft| {
+        ft.borrow().iter().find(|(p, _)| *p == principal).map(|(_, tracks)| tracks.clone()).unwrap_or_default()
+    })
+}
+
+// Notifications System
+#[ic_cdk::update]
+pub fn send_notification(user_principal: Principal, message: String) -> Notification {
+    let now = ic_cdk::api::time() / 1_000_000;
+    let id = NOTIFICATION_ID.with(|nid| {
+        let mut nid = nid.borrow_mut();
+        let id = *nid;
+        *nid += 1;
+        id
+    });
+    let notification = Notification {
+        id,
+        user_principal,
+        message,
+        timestamp: now,
+        read: false,
+    };
+    NOTIFICATIONS.with(|n| n.borrow_mut().push(notification.clone()));
+    notification
+}
+
+#[ic_cdk::query]
+pub fn list_notifications() -> Vec<Notification> {
+    let principal = caller();
+    NOTIFICATIONS.with(|n| n.borrow().iter().filter(|notif| notif.user_principal == principal).cloned().collect())
+}
+
+#[ic_cdk::update]
+pub fn mark_notification_read(notification_id: u64) -> bool {
+    let principal = caller();
+    NOTIFICATIONS.with(|n| {
+        let mut n = n.borrow_mut();
+        if let Some(notif) = n.iter_mut().find(|notif| notif.id == notification_id && notif.user_principal == principal) {
+            notif.read = true;
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::update]
+pub fn promote_to_admin() -> bool {
+    let principal = caller();
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        if let Some(user) = users.iter_mut().find(|u| u.principal == principal) {
+            user.role = UserRole::Admin;
+            return true;
+        }
+        false
+    })
 }

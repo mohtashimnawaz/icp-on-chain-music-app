@@ -130,4 +130,18 @@ service : {
     "withdraw_royalties": (nat64, nat64) -> (bool);
     "increment_play_count": (nat64) -> (bool);
     "get_track_analytics": (nat64) -> (opt TrackAnalytics) query;
+    "send_notification": (principal, text) -> (record { id: nat64; user_principal: principal; message: text; timestamp: nat64; read: bool });
+    "list_notifications": () -> (vec record { id: nat64; user_principal: principal; message: text; timestamp: nat64; read: bool }) query;
+    "mark_notification_read": (nat64) -> (bool);
+    "ban_user": (principal) -> (bool);
+    "delete_user_by_admin": (principal) -> (bool);
+    "delete_artist_by_admin": (nat64) -> (bool);
+    "delete_track_by_admin": (nat64) -> (bool);
+    "follow_artist": (principal) -> (bool);
+    "unfollow_artist": (principal) -> (bool);
+    "list_followed_artists": () -> (vec principal) query;
+    "follow_track": (nat64) -> (bool);
+    "unfollow_track": (nat64) -> (bool);
+    "list_followed_tracks": () -> (vec nat64) query;
+    "promote_to_admin": () -> (bool);
 }
