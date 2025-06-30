@@ -312,6 +312,7 @@ pub struct SuspensionAppeal {
     pub notes: Option<String>,
 }
 
+// Storage for workflow management
 thread_local! {
     static ARTISTS: RefCell<Vec<Artist>> = RefCell::new(Vec::new());
     static TRACKS: RefCell<Vec<Track>> = RefCell::new(Vec::new());
@@ -353,6 +354,14 @@ thread_local! {
         "copyright".to_string(),
         "illegal".to_string(),
     ]);
+    
+    // Workflow management storage
+    static WORKFLOW_STEPS: RefCell<Vec<WorkflowStep>> = RefCell::new(Vec::new());
+    static COLLABORATION_SESSIONS: RefCell<Vec<CollaborationSession>> = RefCell::new(Vec::new());
+    static WORKFLOW_TEMPLATES: RefCell<Vec<WorkflowTemplate>> = RefCell::new(Vec::new());
+    static WORKFLOW_STEP_ID: RefCell<u64> = RefCell::new(1);
+    static SESSION_ID: RefCell<u64> = RefCell::new(1);
+    static TEMPLATE_ID: RefCell<u64> = RefCell::new(1);
 }
 
 #[ic_cdk::query]
@@ -2152,5 +2161,454 @@ fn compare_versions(track_id: u64, version1: u32, version2: u32) -> Option<Versi
         } else {
             None
         }
+    })
+}
+
+// --- Advanced Analytics & Insights ---
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TrackPerformanceMetrics {
+    pub track_id: u64,
+    pub total_plays: u64,
+    pub unique_listeners: u64,
+    pub avg_rating: f64,
+    pub total_revenue: u64,
+    pub comments_count: u64,
+    pub shares_count: u64,
+    pub download_count: u64,
+    pub engagement_rate: f64,
+    pub growth_rate: f64,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct UserEngagementMetrics {
+    pub user_id: u64,
+    pub total_tracks_created: u64,
+    pub total_plays_received: u64,
+    pub total_revenue_earned: u64,
+    pub avg_track_rating: f64,
+    pub active_days: u64,
+    pub followers_count: u64,
+    pub following_count: u64,
+    pub engagement_score: f64,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct RevenueInsights {
+    pub total_platform_revenue: u64,
+    pub top_earning_tracks: Vec<(u64, u64)>, // (track_id, revenue)
+    pub top_earning_artists: Vec<(u64, u64)>, // (artist_id, revenue)
+    pub revenue_by_genre: Vec<(String, u64)>,
+    pub monthly_revenue_trend: Vec<(u64, u64)>, // (month_timestamp, revenue)
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct PlatformAnalytics {
+    pub total_tracks: u64,
+    pub total_users: u64,
+    pub total_artists: u64,
+    pub total_plays: u64,
+    pub total_revenue: u64,
+    pub avg_track_rating: f64,
+    pub most_popular_genres: Vec<(String, u64)>,
+    pub most_active_users: Vec<(u64, u64)>, // (user_id, activity_score)
+}
+
+// --- Advanced Analytics Endpoints ---
+#[ic_cdk::query]
+fn get_track_performance_metrics(track_id: u64) -> Option<TrackPerformanceMetrics> {
+    TRACKS.with(|tracks| {
+        if let Some(track) = tracks.borrow().iter().find(|t| t.id == track_id) {
+            let total_plays = track.play_count;
+            let unique_listeners = track.play_count; // Simplified - in real app, track unique listeners
+            let avg_rating = if !track.ratings.is_empty() {
+                let sum: u64 = track.ratings.iter().map(|(_, rating)| *rating as u64).sum();
+                sum as f64 / track.ratings.len() as f64
+            } else {
+                0.0
+            };
+            
+            let total_revenue = track.payments.iter().map(|p| p.amount).sum();
+            let comments_count = track.comments.len() as u64;
+            let shares_count = 0; // Not implemented yet
+            let download_count = 0; // Not implemented yet
+            
+            let engagement_rate = if total_plays > 0 {
+                (comments_count + shares_count) as f64 / total_plays as f64
+            } else {
+                0.0
+            };
+            
+            let growth_rate = 0.0; // Would need historical data
+            
+            Some(TrackPerformanceMetrics {
+                track_id,
+                total_plays,
+                unique_listeners,
+                avg_rating,
+                total_revenue,
+                comments_count,
+                shares_count,
+                download_count,
+                engagement_rate,
+                growth_rate,
+            })
+        } else {
+            None
+        }
+    })
+}
+
+#[ic_cdk::query]
+fn get_user_engagement_metrics(user_id: u64) -> Option<UserEngagementMetrics> {
+    let mut total_tracks_created = 0;
+    let mut total_plays_received = 0;
+    let mut total_revenue_earned = 0;
+    let mut total_ratings = 0;
+    let mut rating_sum = 0;
+    
+    TRACKS.with(|tracks| {
+        for track in tracks.borrow().iter() {
+            if track.contributors.contains(&user_id) {
+                total_tracks_created += 1;
+                total_plays_received += track.play_count;
+                total_revenue_earned += track.payments.iter().map(|p| p.amount).sum::<u64>();
+                
+                for (_, rating) in &track.ratings {
+                    total_ratings += 1;
+                    rating_sum += *rating as u64;
+                }
+            }
+        }
+    });
+    
+    let avg_track_rating = if total_ratings > 0 {
+        rating_sum as f64 / total_ratings as f64
+    } else {
+        0.0
+    };
+    
+    // Simplified metrics - in real app, would calculate from activity logs
+    let active_days = 30; // Placeholder
+    let followers_count = 0; // Not implemented yet
+    let following_count = 0; // Not implemented yet
+    let engagement_score = if total_tracks_created > 0 {
+        (total_plays_received + total_revenue_earned) as f64 / total_tracks_created as f64
+    } else {
+        0.0
+    };
+    
+    Some(UserEngagementMetrics {
+        user_id,
+        total_tracks_created,
+        total_plays_received,
+        total_revenue_earned,
+        avg_track_rating,
+        active_days,
+        followers_count,
+        following_count,
+        engagement_score,
+    })
+}
+
+#[ic_cdk::query]
+fn get_revenue_insights() -> RevenueInsights {
+    let mut total_platform_revenue = 0;
+    let mut track_revenues = Vec::new();
+    let mut artist_revenues = std::collections::HashMap::new();
+    let mut genre_revenues = std::collections::HashMap::new();
+    
+    TRACKS.with(|tracks| {
+        for track in tracks.borrow().iter() {
+            let track_revenue = track.payments.iter().map(|p| p.amount).sum::<u64>();
+            total_platform_revenue += track_revenue;
+            
+            if track_revenue > 0 {
+                track_revenues.push((track.id, track_revenue));
+            }
+            
+            // Aggregate by artist
+            for &contributor in &track.contributors {
+                *artist_revenues.entry(contributor).or_insert(0) += track_revenue;
+            }
+            
+            // Aggregate by genre
+            if let Some(ref genre) = track.genre {
+                *genre_revenues.entry(genre.clone()).or_insert(0) += track_revenue;
+            }
+        }
+    });
+    
+    // Sort by revenue (descending)
+    track_revenues.sort_by(|a, b| b.1.cmp(&a.1));
+    let top_earning_tracks = track_revenues.into_iter().take(10).collect();
+    
+    let mut artist_revenue_vec: Vec<(u64, u64)> = artist_revenues.into_iter().collect();
+    artist_revenue_vec.sort_by(|a, b| b.1.cmp(&a.1));
+    let top_earning_artists = artist_revenue_vec.into_iter().take(10).collect();
+    
+    let mut genre_revenue_vec: Vec<(String, u64)> = genre_revenues.into_iter().collect();
+    genre_revenue_vec.sort_by(|a, b| b.1.cmp(&a.1));
+    
+    let monthly_revenue_trend = vec![(ic_cdk::api::time() / 1_000_000, total_platform_revenue)]; // Simplified
+    
+    RevenueInsights {
+        total_platform_revenue,
+        top_earning_tracks,
+        top_earning_artists,
+        revenue_by_genre: genre_revenue_vec,
+        monthly_revenue_trend,
+    }
+}
+
+#[ic_cdk::query]
+fn get_platform_analytics() -> PlatformAnalytics {
+    let mut total_tracks = 0;
+    let mut total_plays = 0;
+    let mut total_revenue = 0;
+    let mut total_ratings = 0;
+    let mut rating_sum = 0;
+    let mut genre_counts = std::collections::HashMap::new();
+    let mut user_activity = std::collections::HashMap::new();
+    
+    TRACKS.with(|tracks| {
+        for track in tracks.borrow().iter() {
+            total_tracks += 1;
+            total_plays += track.play_count;
+            total_revenue += track.payments.iter().map(|p| p.amount).sum::<u64>();
+            
+            for (_, rating) in &track.ratings {
+                total_ratings += 1;
+                rating_sum += *rating as u64;
+            }
+            
+            if let Some(ref genre) = track.genre {
+                *genre_counts.entry(genre.clone()).or_insert(0) += 1;
+            }
+            
+            for &contributor in &track.contributors {
+                *user_activity.entry(contributor).or_insert(0) += track.play_count + track.comments.len() as u64;
+            }
+        }
+    });
+    
+    let avg_track_rating = if total_ratings > 0 {
+        rating_sum as f64 / total_ratings as f64
+    } else {
+        0.0
+    };
+    
+    let mut genre_vec: Vec<(String, u64)> = genre_counts.into_iter().collect();
+    genre_vec.sort_by(|a, b| b.1.cmp(&a.1));
+    let most_popular_genres = genre_vec.into_iter().take(10).collect();
+    
+    let mut user_activity_vec: Vec<(u64, u64)> = user_activity.into_iter().collect();
+    user_activity_vec.sort_by(|a, b| b.1.cmp(&a.1));
+    let most_active_users = user_activity_vec.into_iter().take(10).collect();
+    
+    PlatformAnalytics {
+        total_tracks,
+        total_users: 100, // Placeholder - would count actual users
+        total_artists: 50, // Placeholder - would count actual artists
+        total_plays,
+        total_revenue,
+        avg_track_rating,
+        most_popular_genres,
+        most_active_users,
+    }
+}
+
+// --- Collaborative Workflow Management ---
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub enum WorkflowStatus {
+    Planning,
+    Recording,
+    Mixing,
+    Mastering,
+    Review,
+    Published,
+    Archived,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct WorkflowStep {
+    pub id: u64,
+    pub track_id: u64,
+    pub step_name: String,
+    pub status: WorkflowStatus,
+    pub assigned_to: Vec<u64>,
+    pub due_date: Option<u64>,
+    pub completed_at: Option<u64>,
+    pub notes: Option<String>,
+    pub dependencies: Vec<u64>, // IDs of steps that must be completed first
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct CollaborationSession {
+    pub id: u64,
+    pub track_id: u64,
+    pub session_name: String,
+    pub participants: Vec<u64>,
+    pub start_time: u64,
+    pub end_time: Option<u64>,
+    pub notes: Option<String>,
+    pub recording_url: Option<String>,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct WorkflowTemplate {
+    pub id: u64,
+    pub name: String,
+    pub description: String,
+    pub steps: Vec<String>,
+    pub estimated_duration_days: u32,
+    pub genre_specific: bool,
+    pub target_genre: Option<String>,
+}
+
+// --- Collaborative Workflow Management Endpoints ---
+#[ic_cdk::update]
+fn create_workflow_step(track_id: u64, step_name: String, assigned_to: Vec<u64>, due_date: Option<u64>, notes: Option<String>) -> Option<WorkflowStep> {
+    let step_id = WORKFLOW_STEP_ID.with(|id| {
+        let mut id_mut = id.borrow_mut();
+        let current_id = *id_mut;
+        *id_mut += 1;
+        current_id
+    });
+    
+    let now = ic_cdk::api::time() / 1_000_000;
+    let step = WorkflowStep {
+        id: step_id,
+        track_id,
+        step_name,
+        status: WorkflowStatus::Planning,
+        assigned_to,
+        due_date,
+        completed_at: None,
+        notes,
+        dependencies: vec![],
+    };
+    
+    WORKFLOW_STEPS.with(|steps| {
+        steps.borrow_mut().push(step.clone());
+    });
+    
+    Some(step)
+}
+
+#[ic_cdk::update]
+fn update_workflow_step_status(step_id: u64, status: WorkflowStatus, notes: Option<String>) -> Option<WorkflowStep> {
+    let now = ic_cdk::api::time() / 1_000_000;
+    WORKFLOW_STEPS.with(|steps| {
+        if let Some(step) = steps.borrow_mut().iter_mut().find(|s| s.id == step_id) {
+            step.status = status.clone();
+            if let Some(ref new_notes) = notes {
+                step.notes = Some(new_notes.clone());
+            }
+            if matches!(status, WorkflowStatus::Published) {
+                step.completed_at = Some(now);
+            }
+            Some(step.clone())
+        } else {
+            None
+        }
+    })
+}
+
+#[ic_cdk::query]
+fn get_track_workflow_steps(track_id: u64) -> Vec<WorkflowStep> {
+    WORKFLOW_STEPS.with(|steps| {
+        steps.borrow().iter().filter(|s| s.track_id == track_id).cloned().collect()
+    })
+}
+
+#[ic_cdk::update]
+fn create_collaboration_session(track_id: u64, session_name: String, participants: Vec<u64>, notes: Option<String>) -> Option<CollaborationSession> {
+    let session_id = SESSION_ID.with(|id| {
+        let mut id_mut = id.borrow_mut();
+        let current_id = *id_mut;
+        *id_mut += 1;
+        current_id
+    });
+    
+    let now = ic_cdk::api::time() / 1_000_000;
+    let session = CollaborationSession {
+        id: session_id,
+        track_id,
+        session_name,
+        participants,
+        start_time: now,
+        end_time: None,
+        notes,
+        recording_url: None,
+    };
+    
+    COLLABORATION_SESSIONS.with(|sessions| {
+        sessions.borrow_mut().push(session.clone());
+    });
+    
+    Some(session)
+}
+
+#[ic_cdk::update]
+fn end_collaboration_session(session_id: u64, notes: Option<String>) -> Option<CollaborationSession> {
+    let now = ic_cdk::api::time() / 1_000_000;
+    COLLABORATION_SESSIONS.with(|sessions| {
+        if let Some(session) = sessions.borrow_mut().iter_mut().find(|s| s.id == session_id) {
+            session.end_time = Some(now);
+            if let Some(ref new_notes) = notes {
+                session.notes = Some(new_notes.clone());
+            }
+            Some(session.clone())
+        } else {
+            None
+        }
+    })
+}
+
+#[ic_cdk::query]
+fn get_track_collaboration_sessions(track_id: u64) -> Vec<CollaborationSession> {
+    COLLABORATION_SESSIONS.with(|sessions| {
+        sessions.borrow().iter().filter(|s| s.track_id == track_id).cloned().collect()
+    })
+}
+
+#[ic_cdk::update]
+fn create_workflow_template(name: String, description: String, steps: Vec<String>, estimated_duration_days: u32, genre_specific: bool, target_genre: Option<String>) -> Option<WorkflowTemplate> {
+    let template_id = TEMPLATE_ID.with(|id| {
+        let mut id_mut = id.borrow_mut();
+        let current_id = *id_mut;
+        *id_mut += 1;
+        current_id
+    });
+    
+    let template = WorkflowTemplate {
+        id: template_id,
+        name,
+        description,
+        steps,
+        estimated_duration_days,
+        genre_specific,
+        target_genre,
+    };
+    
+    WORKFLOW_TEMPLATES.with(|templates| {
+        templates.borrow_mut().push(template.clone());
+    });
+    
+    Some(template)
+}
+
+#[ic_cdk::query]
+fn get_workflow_templates() -> Vec<WorkflowTemplate> {
+    WORKFLOW_TEMPLATES.with(|templates| templates.borrow().clone())
+}
+
+#[ic_cdk::query]
+fn get_workflow_templates_by_genre(genre: String) -> Vec<WorkflowTemplate> {
+    WORKFLOW_TEMPLATES.with(|templates| {
+        templates.borrow().iter()
+            .filter(|t| !t.genre_specific || t.target_genre.as_ref() == Some(&genre))
+            .cloned()
+            .collect()
     })
 }

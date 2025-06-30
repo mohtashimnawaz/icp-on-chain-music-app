@@ -137,6 +137,84 @@ type VersionComparison = record {
   contributors_diff: opt text;
 };
 
+// --- Advanced Analytics & Insights ---
+type TrackPerformanceMetrics = record {
+  track_id: nat64;
+  total_plays: nat64;
+  unique_listeners: nat64;
+  avg_rating: float64;
+  total_revenue: nat64;
+  comments_count: nat64;
+  shares_count: nat64;
+  download_count: nat64;
+  engagement_rate: float64;
+  growth_rate: float64;
+};
+
+type UserEngagementMetrics = record {
+  user_id: nat64;
+  total_tracks_created: nat64;
+  total_plays_received: nat64;
+  total_revenue_earned: nat64;
+  avg_track_rating: float64;
+  active_days: nat64;
+  followers_count: nat64;
+  following_count: nat64;
+  engagement_score: float64;
+};
+
+type RevenueInsights = record {
+  total_platform_revenue: nat64;
+  top_earning_tracks: vec record { 0: nat64; 1: nat64 };
+  top_earning_artists: vec record { 0: nat64; 1: nat64 };
+  revenue_by_genre: vec record { 0: text; 1: nat64 };
+  monthly_revenue_trend: vec record { 0: nat64; 1: nat64 };
+};
+
+type PlatformAnalytics = record {
+  total_tracks: nat64;
+  total_users: nat64;
+  total_artists: nat64;
+  total_plays: nat64;
+  total_revenue: nat64;
+  avg_track_rating: float64;
+  most_popular_genres: vec record { 0: text; 1: nat64 };
+  most_active_users: vec record { 0: nat64; 1: nat64 };
+};
+
+// --- Collaborative Workflow Management ---
+type WorkflowStatus = variant { Planning; Recording; Mixing; Mastering; Review; Published; Archived };
+type WorkflowStep = record {
+  id: nat64;
+  track_id: nat64;
+  step_name: text;
+  status: WorkflowStatus;
+  assigned_to: vec nat64;
+  due_date: opt nat64;
+  completed_at: opt nat64;
+  notes: opt text;
+  dependencies: vec nat64;
+};
+type CollaborationSession = record {
+  id: nat64;
+  track_id: nat64;
+  session_name: text;
+  participants: vec nat64;
+  start_time: nat64;
+  end_time: opt nat64;
+  notes: opt text;
+  recording_url: opt text;
+};
+type WorkflowTemplate = record {
+  id: nat64;
+  name: text;
+  description: text;
+  steps: vec text;
+  estimated_duration_days: nat32;
+  genre_specific: bool;
+  target_genre: opt text;
+};
+
 service : {
     "greet": (text) -> (text) query;
     "register_artist": (text, text, opt text, opt text, opt vec text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64; profile_image_url: opt text; links: opt vec text });
@@ -292,4 +370,21 @@ service : {
     revert_to_version: (nat64, nat32) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } });
     get_version_history: (nat64) -> (vec TrackVersion) query;
     compare_versions: (nat64, nat32, nat32) -> (opt VersionComparison) query;
+    
+    // --- Advanced Analytics & Insights ---
+    get_track_performance_metrics: (nat64) -> (opt TrackPerformanceMetrics) query;
+    get_user_engagement_metrics: (nat64) -> (opt UserEngagementMetrics) query;
+    get_revenue_insights: () -> (RevenueInsights) query;
+    get_platform_analytics: () -> (PlatformAnalytics) query;
+    
+    // --- Collaborative Workflow Management ---
+    create_workflow_step: (nat64, text, vec nat64, opt nat64, opt text) -> (opt WorkflowStep);
+    update_workflow_step_status: (nat64, WorkflowStatus, opt text) -> (opt WorkflowStep);
+    get_track_workflow_steps: (nat64) -> (vec WorkflowStep) query;
+    create_collaboration_session: (nat64, text, vec nat64, opt text) -> (opt CollaborationSession);
+    end_collaboration_session: (nat64, opt text) -> (opt CollaborationSession);
+    get_track_collaboration_sessions: (nat64) -> (vec CollaborationSession) query;
+    create_workflow_template: (text, text, vec text, nat32, bool, opt text) -> (opt WorkflowTemplate);
+    get_workflow_templates: () -> (vec WorkflowTemplate) query;
+    get_workflow_templates_by_genre: (text) -> (vec WorkflowTemplate) query;
 }
