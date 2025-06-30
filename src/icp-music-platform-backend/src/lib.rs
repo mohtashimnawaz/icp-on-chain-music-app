@@ -67,12 +67,21 @@ pub struct Payment {
     pub timestamp: u64,
 }
 
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct Activity {
+    pub user_id: u64,
+    pub action: String,
+    pub timestamp: u64,
+    pub details: String,
+}
+
 thread_local! {
     static ARTISTS: RefCell<Vec<Artist>> = RefCell::new(Vec::new());
     static TRACKS: RefCell<Vec<Track>> = RefCell::new(Vec::new());
     static ARTIST_ID: RefCell<u64> = RefCell::new(1);
     static TRACK_ID: RefCell<u64> = RefCell::new(1);
     static TRACK_VERSIONS: RefCell<Vec<(u64, Vec<TrackVersion>)>> = RefCell::new(Vec::new()); // track_id -> versions
+    static ACTIVITY_LOG: RefCell<Vec<Activity>> = RefCell::new(Vec::new());
 }
 
 #[ic_cdk::query]
@@ -127,6 +136,8 @@ fn list_artists() -> Vec<Artist> {
 // Track CRUD
 #[ic_cdk::update]
 fn create_track(title: String, description: String, contributors: Vec<u64>) -> Track {
+    let now = ic_cdk::api::time() / 1_000_000;
+    let contributors_for_log = contributors.clone();
     TRACKS.with(|tracks| {
         TRACK_ID.with(|id| {
             let mut id_mut = id.borrow_mut();
@@ -159,6 +170,10 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> T
                 };
                 tv.push((track.id, vec![version]));
             });
+            // Log activity for each contributor
+            for &cid in &contributors_for_log {
+                log_activity(cid, "create_track", now, &format!("Track {} created", track.id));
+            }
             *id_mut += 1;
             track
         })
@@ -213,10 +228,12 @@ fn get_track_splits(track_id: u64) -> Option<Vec<Split>> {
 // Add a comment to a track
 #[ic_cdk::update]
 fn add_comment(track_id: u64, commenter: u64, text: String) -> Option<Track> {
+    let now = ic_cdk::api::time() / 1_000_000;
     TRACKS.with(|tracks| {
         let mut tracks = tracks.borrow_mut();
         if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
-            track.comments.push(Comment { commenter, text });
+            track.comments.push(Comment { commenter, text: text.clone() });
+            log_activity(commenter, "add_comment", now, &format!("Commented on track {}: {}", track_id, text));
             return Some(track.clone());
         }
         None
@@ -320,6 +337,7 @@ fn distribute_payment(track_id: u64, payer: u64, amount: u64, timestamp: u64) ->
                 }
                 track.payments.push(Payment { payer, amount, timestamp });
                 distributed = true;
+                log_activity(payer, "distribute_payment", timestamp, &format!("Paid {} for track {}", amount, track_id));
             }
         }
     });
@@ -401,5 +419,36 @@ fn get_user_role(track_id: u64, user_id: u64) -> Option<TrackRole> {
     TRACKS.with(|tracks| {
         tracks.borrow().iter().find(|t| t.id == track_id)
             .and_then(|track| track.roles.iter().find(|(id, _)| *id == user_id).map(|(_, role)| role.clone()))
+    })
+}
+
+// Helper to log activity
+fn log_activity(user_id: u64, action: &str, timestamp: u64, details: &str) {
+    ACTIVITY_LOG.with(|log| {
+        log.borrow_mut().push(Activity {
+            user_id,
+            action: action.to_string(),
+            timestamp,
+            details: details.to_string(),
+        });
+    });
+}
+
+// Fetch user activity
+#[ic_cdk::query]
+fn get_user_activity(user_id: u64) -> Vec<Activity> {
+    ACTIVITY_LOG.with(|log| {
+        log.borrow().iter().filter(|a| a.user_id == user_id).cloned().collect()
+    })
+}
+
+// Fetch recent activity (most recent N)
+#[ic_cdk::query]
+fn get_recent_activity(count: u32) -> Vec<Activity> {
+    ACTIVITY_LOG.with(|log| {
+        let log = log.borrow();
+        let len = log.len();
+        let start = if len > count as usize { len - count as usize } else { 0 };
+        log[start..].to_vec()
     })
 }

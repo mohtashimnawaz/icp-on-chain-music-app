@@ -1,5 +1,6 @@
 type TrackVisibility = variant { Public; Private; InviteOnly };
 type TrackRole = variant { Owner; Collaborator; Viewer };
+type Activity = record { user_id: nat64; action: text; timestamp: nat64; details: text };
 
 service : {
     "greet": (text) -> (text) query;
@@ -28,4 +29,6 @@ service : {
     "invite_user": (nat64, nat64) -> (bool);
     "assign_role": (nat64, nat64, TrackRole) -> (bool);
     "get_user_role": (nat64, nat64) -> (opt TrackRole) query;
+    "get_user_activity": (nat64) -> (vec Activity) query;
+    "get_recent_activity": (nat32) -> (vec Activity) query;
 }
