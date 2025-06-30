@@ -1,4 +1,39 @@
-# `icp-music-platform`
+# ICP Music Platform
+
+A decentralized platform for musicians to collaborate, produce, and distribute music directly on the Internet Computer Protocol (ICP) blockchain. This platform ensures artists retain full rights and revenue.
+
+## Tech Stack
+- **Backend:** Rust canisters (ICP)
+- **Frontend:** React (TypeScript)
+- **ICP Tools:** DFX, @dfinity/agent, @dfinity/auth-client
+
+## Features
+- Artist profiles and authentication
+- Music collaboration and versioning
+- On-chain music publishing and distribution
+- Direct revenue and rights management for artists
+
+## Getting Started
+
+### Prerequisites
+- [DFX SDK](https://internetcomputer.org/docs/current/developer-docs/setup/install/)
+- Node.js & npm
+
+### Setup
+```bash
+git clone <repo-url>
+cd icp-music-platform
+# Start the local ICP replica and backend canister
+dfx start --background
+dfx deploy
+# Start the React frontend
+cd frontend
+npm start
+```
+
+---
+
+This project is in early development. Contributions welcome!
 
 Welcome to your new `icp-music-platform` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
 
