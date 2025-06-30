@@ -116,6 +116,27 @@ type SuspensionAppeal = record {
   notes: opt text;
 };
 
+type TrackVersion = record {
+  version: nat32;
+  title: text;
+  description: text;
+  contributors: vec nat64;
+  changed_by: principal;
+  changed_at: nat64;
+  change_description: opt text;
+};
+
+type VersionComparison = record {
+  version1: nat32;
+  version2: nat32;
+  title_changed: bool;
+  description_changed: bool;
+  contributors_changed: bool;
+  title_diff: opt text;
+  description_diff: opt text;
+  contributors_diff: opt text;
+};
+
 service : {
     "greet": (text) -> (text) query;
     "register_artist": (text, text, opt text, opt text, opt vec text) -> (opt record { id: nat64; name: text; bio: text; social: opt text; royalty_balance: nat64; profile_image_url: opt text; links: opt vec text });
@@ -146,8 +167,8 @@ service : {
     "get_track_splits": (nat64) -> (opt vec record { id: nat64; pct: nat8 }) query;
     "add_comment": (nat64, nat64, text) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } });
     "list_comments": (nat64) -> (vec record { commenter: nat64; text: text }) query;
-    "add_track_version": (nat64, text, text, vec nat64) -> (opt record { version: nat32; title: text; description: text; contributors: vec nat64 });
-    "get_track_versions": (nat64) -> (vec record { version: nat32; title: text; description: text; contributors: vec nat64 }) query;
+    "add_track_version": (nat64, text, text, vec nat64, opt text) -> (opt TrackVersion);
+    "get_track_versions": (nat64) -> (vec TrackVersion) query;
     "search_tracks_by_title": (text) -> (vec record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } }) query;
     "search_tracks_by_contributor": (nat64) -> (vec record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } }) query;
     "delete_track": (nat64) -> (bool);
@@ -263,4 +284,12 @@ service : {
     submit_suspension_appeal: (nat64, text) -> (opt SuspensionAppeal);
     review_suspension_appeal: (nat64, AppealStatus, opt text) -> (bool);
     list_suspension_appeals: () -> (vec SuspensionAppeal) query;
+    // --- Automated Content Moderation ---
+    add_banned_keyword: (text) -> (bool);
+    remove_banned_keyword: (text) -> (bool);
+    list_banned_keywords: () -> (vec text) query;
+    // --- Enhanced Version Management ---
+    revert_to_version: (nat64, nat32) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } });
+    get_version_history: (nat64) -> (vec TrackVersion) query;
+    compare_versions: (nat64, nat32, nat32) -> (opt VersionComparison) query;
 }

@@ -68,6 +68,9 @@ pub struct TrackVersion {
     pub title: String,
     pub description: String,
     pub contributors: Vec<u64>,
+    pub changed_by: Principal,
+    pub changed_at: u64,
+    pub change_description: Option<String>,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -343,6 +346,13 @@ thread_local! {
     static SUSPENSION_ID: RefCell<u64> = RefCell::new(1);
     static SUSPENSION_APPEALS: RefCell<Vec<SuspensionAppeal>> = RefCell::new(Vec::new());
     static SUSPENSION_APPEAL_ID: RefCell<u64> = RefCell::new(1);
+    static BANNED_KEYWORDS: RefCell<Vec<String>> = RefCell::new(vec![
+        "spam".to_string(),
+        "scam".to_string(),
+        "fake".to_string(),
+        "copyright".to_string(),
+        "illegal".to_string(),
+    ]);
 }
 
 #[ic_cdk::query]
@@ -416,50 +426,61 @@ fn create_track(title: String, description: String, contributors: Vec<u64>) -> O
     }
     let now = ic_cdk::api::time() / 1_000_000;
     let contributors_for_log = contributors.clone();
+    let track_id = TRACK_ID.with(|id| {
+        let mut id_mut = id.borrow_mut();
+        let current_id = *id_mut;
+        *id_mut += 1;
+        current_id
+    });
+    
+    // Check content for banned words
+    let content_to_check = format!("{} {}", title, description);
+    auto_flag_content_if_needed(ModerationTargetType::Track, track_id.to_string(), &content_to_check);
+    
+    let creator = caller();
     TRACKS.with(|tracks| {
-        TRACK_ID.with(|id| {
-            let mut id_mut = id.borrow_mut();
-            let mut roles = vec![];
-            for &cid in &contributors {
-                roles.push((cid, TrackRole::Owner));
-            }
-            let track = Track {
-                id: *id_mut,
-                title: title.clone(),
-                description: description.clone(),
-                contributors: contributors.clone(),
+        let mut roles = vec![];
+        for &cid in &contributors {
+            roles.push((cid, TrackRole::Owner));
+        }
+        let track = Track {
+            id: track_id,
+            title: title.clone(),
+            description: description.clone(),
+            contributors: contributors.clone(),
+            version: 1,
+            splits: None,
+            comments: vec![],
+            payments: vec![],
+            visibility: TrackVisibility::Public,
+            invited: vec![],
+            roles,
+            ratings: vec![],
+            tags: vec![],
+            genre: None,
+            play_count: 0,
+            downloadable: true,
+        };
+        tracks.borrow_mut().push(track.clone());
+        // Store initial version
+        TRACK_VERSIONS.with(|tv| {
+            let mut tv = tv.borrow_mut();
+            let version = TrackVersion {
                 version: 1,
-                splits: None,
-                comments: vec![],
-                payments: vec![],
-                visibility: TrackVisibility::Public,
-                invited: vec![],
-                roles,
-                ratings: vec![],
-                tags: vec![],
-                genre: None,
-                play_count: 0,
-                downloadable: true,
+                title,
+                description,
+                contributors,
+                changed_by: creator,
+                changed_at: now,
+                change_description: Some("Initial version".to_string()),
             };
-            tracks.borrow_mut().push(track.clone());
-            // Store initial version
-            TRACK_VERSIONS.with(|tv| {
-                let mut tv = tv.borrow_mut();
-                let version = TrackVersion {
-                    version: 1,
-                    title,
-                    description,
-                    contributors,
-                };
-                tv.push((track.id, vec![version]));
-            });
-            // Log activity for each contributor
-            for &cid in &contributors_for_log {
-                log_activity(cid, "create_track", now, &format!("Track {} created", track.id));
-            }
-            *id_mut += 1;
-            Some(track)
-        })
+            tv.push((track.id, vec![version]));
+        });
+        // Log activity for each contributor
+        for &cid in &contributors_for_log {
+            log_activity(cid, "create_track", now, &format!("Track {} created", track.id));
+        }
+        Some(track)
     })
 }
 
@@ -512,6 +533,10 @@ fn get_track_splits(track_id: u64) -> Option<Vec<Split>> {
 #[ic_cdk::update]
 fn add_comment(track_id: u64, commenter: u64, text: String) -> Option<Track> {
     let now = ic_cdk::api::time() / 1_000_000;
+    
+    // Check comment for banned words
+    auto_flag_content_if_needed(ModerationTargetType::Comment, format!("track_{}_comment_{}", track_id, now), &text);
+    
     TRACKS.with(|tracks| {
         let mut tracks = tracks.borrow_mut();
         if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
@@ -532,39 +557,43 @@ fn list_comments(track_id: u64) -> Vec<Comment> {
 
 // Add a new version to a track
 #[ic_cdk::update]
-fn add_track_version(track_id: u64, title: String, description: String, contributors: Vec<u64>) -> Option<TrackVersion> {
-    TRACKS.with(|tracks| {
-        let mut tracks = tracks.borrow_mut();
-        if let Some(track) = tracks.iter_mut().find(|t| t.id == track_id) {
-            let new_version = track.version + 1;
-            track.version = new_version;
-            track.title = title.clone();
-            track.description = description.clone();
-            track.contributors = contributors.clone();
+fn add_track_version(track_id: u64, title: String, description: String, contributors: Vec<u64>, change_description: Option<String>) -> Option<TrackVersion> {
+    let now = ic_cdk::api::time() / 1_000_000;
+    let changer = caller();
+    TRACK_VERSIONS.with(|tv| {
+        let mut tv = tv.borrow_mut();
+        if let Some((id, versions)) = tv.iter_mut().find(|(tid, _)| *tid == track_id) {
+            let new_version_num = versions.len() as u32 + 1;
             let version = TrackVersion {
-                version: new_version,
-                title,
-                description,
-                contributors,
+                version: new_version_num,
+                title: title.clone(),
+                description: description.clone(),
+                contributors: contributors.clone(),
+                changed_by: changer,
+                changed_at: now,
+                change_description,
             };
-            TRACK_VERSIONS.with(|tv| {
-                let mut tv = tv.borrow_mut();
-                if let Some((_, versions)) = tv.iter_mut().find(|(id, _)| *id == track_id) {
-                    versions.push(version.clone());
-                } else {
-                    tv.push((track_id, vec![version.clone()]));
+            versions.push(version.clone());
+            // Update the main track
+            TRACKS.with(|tracks| {
+                if let Some(track) = tracks.borrow_mut().iter_mut().find(|t| t.id == track_id) {
+                    track.title = title;
+                    track.description = description;
+                    track.contributors = contributors;
+                    track.version = new_version_num;
                 }
             });
-            return Some(version);
+            Some(version)
+        } else {
+            None
         }
-        None
     })
 }
 
 #[ic_cdk::query]
 fn get_track_versions(track_id: u64) -> Vec<TrackVersion> {
     TRACK_VERSIONS.with(|tv| {
-        tv.borrow().iter().find(|(id, _)| *id == track_id).map(|(_, v)| v.clone()).unwrap_or_default()
+        tv.borrow().iter().find(|(id, _)| *id == track_id).map(|(_, versions)| versions.clone()).unwrap_or_default()
     })
 }
 
@@ -1918,4 +1947,210 @@ pub fn review_suspension_appeal(appeal_id: u64, status: AppealStatus, notes: Opt
 #[ic_cdk::query]
 pub fn list_suspension_appeals() -> Vec<SuspensionAppeal> {
     SUSPENSION_APPEALS.with(|a| a.borrow().clone())
+}
+
+// Simple content check function
+fn check_content_for_banned_words(content: &str) -> Option<String> {
+    let content_lower = content.to_lowercase();
+    BANNED_KEYWORDS.with(|keywords| {
+        for keyword in keywords.borrow().iter() {
+            if content_lower.contains(keyword) {
+                return Some(format!("Contains banned keyword: {}", keyword));
+            }
+        }
+        None
+    })
+}
+
+// Auto-flag content if it contains banned words
+fn auto_flag_content_if_needed(target_type: ModerationTargetType, target_id: String, content: &str) {
+    if let Some(reason) = check_content_for_banned_words(content) {
+        let flagged_by = None; // Auto-flagged
+        let now = ic_cdk::api::time() / 1_000_000;
+        let id = MODERATION_QUEUE_ID.with(|mid| {
+            let mut mid = mid.borrow_mut();
+            let id = *mid;
+            *mid += 1;
+            id
+        });
+        let item = ModerationQueueItem {
+            id,
+            target_type,
+            target_id,
+            flagged_by,
+            reason,
+            status: ModerationStatus::Pending,
+            created_at: now,
+            reviewed_by: None,
+            reviewed_at: None,
+            notes: Some("Auto-flagged by system".to_string()),
+        };
+        MODERATION_QUEUE.with(|q| q.borrow_mut().push(item));
+    }
+}
+
+// --- Automated Content Moderation Endpoints ---
+#[ic_cdk::update]
+pub fn add_banned_keyword(keyword: String) -> bool {
+    let admin = caller();
+    if !is_admin(admin) {
+        return false;
+    }
+    let keyword_lower = keyword.to_lowercase();
+    BANNED_KEYWORDS.with(|keywords| {
+        let mut keywords = keywords.borrow_mut();
+        if !keywords.contains(&keyword_lower) {
+            keywords.push(keyword_lower);
+            log_admin_action(
+                admin,
+                "add_banned_keyword",
+                "Keyword",
+                &keyword,
+                Some("Banned keyword added".to_string()),
+            );
+            return true;
+        }
+        false
+    })
+}
+
+#[ic_cdk::update]
+pub fn remove_banned_keyword(keyword: String) -> bool {
+    let admin = caller();
+    if !is_admin(admin) {
+        return false;
+    }
+    let keyword_lower = keyword.to_lowercase();
+    BANNED_KEYWORDS.with(|keywords| {
+        let mut keywords = keywords.borrow_mut();
+        let len_before = keywords.len();
+        keywords.retain(|k| k != &keyword_lower);
+        let removed = keywords.len() < len_before;
+        if removed {
+            log_admin_action(
+                admin,
+                "remove_banned_keyword",
+                "Keyword",
+                &keyword,
+                Some("Banned keyword removed".to_string()),
+            );
+        }
+        removed
+    })
+}
+
+#[ic_cdk::query]
+pub fn list_banned_keywords() -> Vec<String> {
+    BANNED_KEYWORDS.with(|keywords| keywords.borrow().clone())
+}
+
+// --- Enhanced Version Management ---
+#[ic_cdk::update]
+fn revert_to_version(track_id: u64, version_number: u32) -> Option<Track> {
+    let now = ic_cdk::api::time() / 1_000_000;
+    let reverter = caller();
+    
+    // Check if user has permission to modify this track
+    let has_permission = TRACKS.with(|tracks| {
+        if let Some(track) = tracks.borrow().iter().find(|t| t.id == track_id) {
+            track.contributors.contains(&1) // Simple check - in real app, check actual user ID
+        } else {
+            false
+        }
+    });
+    
+    if !has_permission {
+        return None;
+    }
+    
+    TRACK_VERSIONS.with(|tv| {
+        let mut tv = tv.borrow_mut();
+        if let Some((_, versions)) = tv.iter_mut().find(|(tid, _)| *tid == track_id) {
+            if let Some(target_version) = versions.iter().find(|v| v.version == version_number) {
+                // Clone the target version data to avoid borrow checker issues
+                let target_title = target_version.title.clone();
+                let target_description = target_version.description.clone();
+                let target_contributors = target_version.contributors.clone();
+                
+                // Create a new version that reverts to the target version
+                let new_version_num = versions.len() as u32 + 1;
+                let revert_version = TrackVersion {
+                    version: new_version_num,
+                    title: target_title.clone(),
+                    description: target_description.clone(),
+                    contributors: target_contributors.clone(),
+                    changed_by: reverter,
+                    changed_at: now,
+                    change_description: Some(format!("Reverted to version {}", version_number)),
+                };
+                versions.push(revert_version);
+                
+                // Update the main track
+                TRACKS.with(|tracks| {
+                    if let Some(track) = tracks.borrow_mut().iter_mut().find(|t| t.id == track_id) {
+                        track.title = target_title;
+                        track.description = target_description;
+                        track.contributors = target_contributors;
+                        track.version = new_version_num;
+                        Some(track.clone())
+                    } else {
+                        None
+                    }
+                })
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    })
+}
+
+#[ic_cdk::query]
+fn get_version_history(track_id: u64) -> Vec<TrackVersion> {
+    get_track_versions(track_id)
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct VersionComparison {
+    pub version1: u32,
+    pub version2: u32,
+    pub title_changed: bool,
+    pub description_changed: bool,
+    pub contributors_changed: bool,
+    pub title_diff: Option<String>,
+    pub description_diff: Option<String>,
+    pub contributors_diff: Option<String>,
+}
+
+#[ic_cdk::query]
+fn compare_versions(track_id: u64, version1: u32, version2: u32) -> Option<VersionComparison> {
+    TRACK_VERSIONS.with(|tv| {
+        let tv = tv.borrow();
+        if let Some((_, versions)) = tv.iter().find(|(tid, _)| *tid == track_id) {
+            let v1 = versions.iter().find(|v| v.version == version1);
+            let v2 = versions.iter().find(|v| v.version == version2);
+            
+            if let (Some(ver1), Some(ver2)) = (v1, v2) {
+                let title_changed = ver1.title != ver2.title;
+                let description_changed = ver1.description != ver2.description;
+                let contributors_changed = ver1.contributors != ver2.contributors;
+                
+                Some(VersionComparison {
+                    version1,
+                    version2,
+                    title_changed,
+                    description_changed,
+                    contributors_changed,
+                    title_diff: if title_changed { Some(format!("{} -> {}", ver1.title, ver2.title)) } else { None },
+                    description_diff: if description_changed { Some(format!("{} -> {}", ver1.description, ver2.description)) } else { None },
+                    contributors_diff: if contributors_changed { Some(format!("{:?} -> {:?}", ver1.contributors, ver2.contributors)) } else { None },
+                })
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    })
 }
