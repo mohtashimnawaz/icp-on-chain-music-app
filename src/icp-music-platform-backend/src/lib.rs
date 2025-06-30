@@ -1,6 +1,8 @@
 use ic_cdk::storage;
 use candid::{CandidType, Deserialize};
 use std::cell::RefCell;
+use ic_cdk::api::caller;
+use candid::Principal;
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct Artist {
@@ -11,6 +13,7 @@ pub struct Artist {
     pub royalty_balance: u64,
     pub profile_image_url: Option<String>,
     pub links: Option<Vec<String>>,
+    pub user_principal: Principal,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -119,6 +122,22 @@ pub struct Task {
     pub updated_at: u64,
 }
 
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct User {
+    pub principal: Principal,
+    pub username: String,
+    pub bio: Option<String>,
+    pub avatar_url: Option<String>,
+    pub role: UserRole,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum UserRole {
+    User,
+    Admin,
+    Moderator,
+}
+
 thread_local! {
     static ARTISTS: RefCell<Vec<Artist>> = RefCell::new(Vec::new());
     static TRACKS: RefCell<Vec<Track>> = RefCell::new(Vec::new());
@@ -130,6 +149,8 @@ thread_local! {
     static COLLAB_REQUEST_ID: RefCell<u64> = RefCell::new(1);
     static TASKS: RefCell<Vec<Task>> = RefCell::new(Vec::new());
     static TASK_ID: RefCell<u64> = RefCell::new(1);
+    static USERS: RefCell<Vec<User>> = RefCell::new(Vec::new());
+    static USER_ACTIVITY_LOG: RefCell<Vec<UserActivity>> = RefCell::new(Vec::new());
 }
 
 #[ic_cdk::query]
@@ -154,6 +175,7 @@ fn register_artist(name: String, bio: String, social: Option<String>, profile_im
                 royalty_balance: 0,
                 profile_image_url,
                 links,
+                user_principal: caller(),
             };
             artists.borrow_mut().push(artist.clone());
             *id_mut += 1;
@@ -797,5 +819,136 @@ fn get_track_analytics(track_id: u64) -> Option<TrackAnalytics> {
                 avg_rating,
             }
         })
+    })
+}
+
+// User CRUD
+#[ic_cdk::update]
+fn register_user(username: String, bio: Option<String>, avatar_url: Option<String>) -> Option<User> {
+    let principal = caller();
+    if username.trim().is_empty() {
+        return None;
+    }
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        if users.iter().any(|u| u.principal == principal) {
+            return None; // Already registered
+        }
+        let user = User {
+            principal,
+            username,
+            bio,
+            avatar_url,
+            role: UserRole::User,
+        };
+        users.push(user.clone());
+        Some(user)
+    })
+}
+
+#[ic_cdk::query]
+fn get_user() -> Option<User> {
+    let principal = caller();
+    USERS.with(|users| users.borrow().iter().find(|u| u.principal == principal).cloned())
+}
+
+#[ic_cdk::update]
+fn update_user(username: String, bio: Option<String>, avatar_url: Option<String>) -> Option<User> {
+    let principal = caller();
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        if let Some(user) = users.iter_mut().find(|u| u.principal == principal) {
+            user.username = username;
+            user.bio = bio;
+            user.avatar_url = avatar_url;
+            return Some(user.clone());
+        }
+        None
+    })
+}
+
+#[ic_cdk::update]
+fn delete_user() -> bool {
+    let principal = caller();
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        let len_before = users.len();
+        users.retain(|u| u.principal != principal);
+        users.len() < len_before
+    })
+}
+
+// 1. List all users
+#[ic_cdk::query]
+fn list_users() -> Vec<User> {
+    USERS.with(|users| users.borrow().clone())
+}
+
+// 2. Get user by principal
+#[ic_cdk::query]
+fn get_user_by_principal(principal: Principal) -> Option<User> {
+    USERS.with(|users| users.borrow().iter().find(|u| u.principal == principal).cloned())
+}
+
+// 3. Search users by username (case-insensitive substring)
+#[ic_cdk::query]
+fn search_users_by_username(query: String) -> Vec<User> {
+    let q = query.to_lowercase();
+    USERS.with(|users| {
+        users.borrow().iter().filter(|u| u.username.to_lowercase().contains(&q)).cloned().collect()
+    })
+}
+
+// 4. User roles
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum UserRole {
+    User,
+    Admin,
+    Moderator,
+}
+
+// Update User struct to include role
+// (NOTE: This requires updating all User creation and update logic)
+// pub struct User {
+//     pub principal: Principal,
+//     pub username: String,
+//     pub bio: Option<String>,
+//     pub avatar_url: Option<String>,
+//     pub role: UserRole,
+// }
+
+// 5. Link artists to users
+// - Add user_principal: Principal to Artist
+// - Update register_artist to require authentication and link to user
+// pub struct Artist {
+//     pub id: u64,
+//     pub user_principal: Principal,
+//     ...
+// }
+
+// 6. User activity log
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct UserActivity {
+    pub principal: Principal,
+    pub action: String,
+    pub timestamp: u64,
+    pub details: String,
+}
+
+fn log_user_activity(principal: Principal, action: &str, timestamp: u64, details: &str) {
+    USER_ACTIVITY_LOG.with(|log| {
+        log.borrow_mut().push(UserActivity {
+            principal,
+            action: action.to_string(),
+            timestamp,
+            details: details.to_string(),
+        });
+    });
+}
+
+#[ic_cdk::query]
+fn get_user_activity_log(principal: Principal) -> Vec<UserActivity> {
+    USER_ACTIVITY_LOG.with(|log| {
+        log.borrow().iter().filter(|a| a.principal == principal).cloned().collect()
     })
 }
