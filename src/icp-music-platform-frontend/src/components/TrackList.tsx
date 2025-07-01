@@ -29,10 +29,6 @@ export const TrackList = ({ tracks, loading, onRate, onComment }: TrackListProps
     }
   };
 
-  const formatTimestamp = (timestamp: bigint) => {
-    return new Date(Number(timestamp) / 1000000).toLocaleDateString();
-  };
-
   const getAverageRating = (ratings: [bigint, number][]) => {
     if (ratings.length === 0) return 0;
     const sum = ratings.reduce((acc, [, rating]) => acc + rating, 0);
