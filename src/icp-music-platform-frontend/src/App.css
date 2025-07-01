@@ -6,27 +6,27 @@
 }
 
 :root {
-  --primary-color: #6366f1;
-  --primary-dark: #4f46e5;
-  --secondary-color: #8b5cf6;
-  --accent-color: #06b6d4;
-  --background: #0f0f23;
-  --surface: rgba(255, 255, 255, 0.05);
-  --surface-hover: rgba(255, 255, 255, 0.1);
+  --primary-color: #ffd700;
+  --primary-dark: #ffb700;
+  --secondary-color: #ffa500;
+  --accent-color: #ffc107;
+  --background: #000000;
+  --surface: rgba(255, 215, 0, 0.05);
+  --surface-hover: rgba(255, 215, 0, 0.1);
   --text-primary: #ffffff;
-  --text-secondary: #a1a1aa;
-  --border: rgba(255, 255, 255, 0.1);
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.2);
+  --text-secondary: #d4af37;
+  --border: rgba(255, 215, 0, 0.15);
+  --success: #32cd32;
+  --warning: #ffa500;
+  --error: #ff4444;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  --glass-bg: rgba(255, 215, 0, 0.03);
+  --glass-border: rgba(255, 215, 0, 0.25);
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a00 30%, #2d2d00 60%, #0d0d0d 100%);
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;
@@ -201,13 +201,13 @@ body {
 
 .btn-primary {
   background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
-  color: white;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  color: #000000;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.6);
 }
 
 .btn-secondary {
@@ -318,7 +318,7 @@ body {
 .form-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
 }
 
 .form-textarea {
