@@ -306,18 +306,16 @@ export const useNotifications = () => {
 };
 
 // Hook for collaboration requests
-export const useCollabRequests = (userId?: bigint) => {
-  const [collabRequests, setCollabRequests] = useState<CollabRequest[]>([]);
+export const useCollaboration = () => {
+  const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCollabRequests = async () => {
-    if (!userId) return;
-    
+  const fetchCollabRequests = async (userId: bigint) => {
     try {
       setLoading(true);
       const requestsData = await musicService.listCollabRequestsForUser(userId);
-      setCollabRequests(requestsData);
+      setRequests(requestsData);
       setError(null);
     } catch (err) {
       setError('Failed to fetch collaboration requests');
@@ -327,19 +325,11 @@ export const useCollabRequests = (userId?: bigint) => {
     }
   };
 
-  useEffect(() => {
-    if (userId) {
-      fetchCollabRequests();
-    }
-  }, [userId]);
-
-  const sendCollabRequest = async (to: bigint, trackId: bigint, message?: string) => {
-    if (!userId) return null;
-    
+  const sendCollabRequest = async (fromUserId: bigint, toUserId: bigint, trackId: bigint, message?: string) => {
     try {
-      const newRequest = await musicService.sendCollabRequest(userId, to, trackId, message);
+      const newRequest = await musicService.sendCollabRequest(fromUserId, toUserId, trackId, message);
       if (newRequest) {
-        setCollabRequests(prev => [...prev, newRequest]);
+        setRequests(prev => [...prev, newRequest]);
         return newRequest;
       }
       return null;
@@ -349,11 +339,11 @@ export const useCollabRequests = (userId?: bigint) => {
     }
   };
 
-  const respondToRequest = async (requestId: bigint, accept: boolean) => {
+  const respondToCollabRequest = async (requestId: bigint, accept: boolean) => {
     try {
       const updatedRequest = await musicService.respondCollabRequest(requestId, accept);
       if (updatedRequest) {
-        setCollabRequests(prev =>
+        setRequests(prev => 
           prev.map(req => req.id === requestId ? updatedRequest : req)
         );
         return updatedRequest;
@@ -366,24 +356,36 @@ export const useCollabRequests = (userId?: bigint) => {
   };
 
   return {
-    collabRequests,
+    requests,
     loading,
     error,
     fetchCollabRequests,
     sendCollabRequest,
-    respondToRequest,
+    respondToCollabRequest,
   };
 };
 
-// Hook for tasks
-export const useTasks = (userId?: bigint) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+// Hook for task management
+export const useTasks = () => {
+  const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTasks = async () => {
-    if (!userId) return;
-    
+  const fetchTasksForTrack = async (trackId: bigint) => {
+    try {
+      setLoading(true);
+      const tasksData = await musicService.listTasksForTrack(trackId);
+      setTasks(tasksData);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch tasks');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTasksForUser = async (userId: bigint) => {
     try {
       setLoading(true);
       const tasksData = await musicService.listTasksForUser(userId);
@@ -396,12 +398,6 @@ export const useTasks = (userId?: bigint) => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (userId) {
-      fetchTasks();
-    }
-  }, [userId]);
 
   const createTask = async (trackId: bigint, assignedTo: bigint, description: string) => {
     try {
@@ -417,11 +413,11 @@ export const useTasks = (userId?: bigint) => {
     }
   };
 
-  const updateTaskStatus = async (taskId: bigint, status: TaskStatus) => {
+  const updateTaskStatus = async (taskId: bigint, status: string) => {
     try {
       const updatedTask = await musicService.updateTaskStatus(taskId, status);
       if (updatedTask) {
-        setTasks(prev =>
+        setTasks(prev => 
           prev.map(task => task.id === taskId ? updatedTask : task)
         );
         return updatedTask;
@@ -437,67 +433,26 @@ export const useTasks = (userId?: bigint) => {
     tasks,
     loading,
     error,
-    fetchTasks,
+    fetchTasksForTrack,
+    fetchTasksForUser,
     createTask,
     updateTaskStatus,
   };
 };
 
-// Hook for track analytics
-export const useTrackAnalytics = (trackId?: bigint) => {
-  const [analytics, setAnalytics] = useState<TrackAnalytics | null>(null);
-  const [performanceMetrics, setPerformanceMetrics] = useState<TrackPerformanceMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAnalytics = async () => {
-    if (!trackId) return;
-    
-    try {
-      setLoading(true);
-      const [analyticsData, metricsData] = await Promise.all([
-        musicService.getTrackAnalytics(trackId),
-        musicService.getTrackPerformanceMetrics(trackId)
-      ]);
-      setAnalytics(analyticsData);
-      setPerformanceMetrics(metricsData);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch track analytics');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (trackId) {
-      fetchAnalytics();
-    }
-  }, [trackId]);
-
-  return {
-    analytics,
-    performanceMetrics,
-    loading,
-    error,
-    fetchAnalytics,
-  };
-};
-
 // Hook for workflow management
-export const useWorkflow = (trackId?: bigint) => {
-  const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([]);
+export const useWorkflow = () => {
+  const [steps, setSteps] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWorkflowSteps = async () => {
-    if (!trackId) return;
-    
+  const fetchWorkflowSteps = async (trackId: bigint) => {
     try {
       setLoading(true);
       const stepsData = await musicService.getTrackWorkflowSteps(trackId);
-      setWorkflowSteps(stepsData);
+      setSteps(stepsData);
       setError(null);
     } catch (err) {
       setError('Failed to fetch workflow steps');
@@ -507,24 +462,31 @@ export const useWorkflow = (trackId?: bigint) => {
     }
   };
 
-  useEffect(() => {
-    if (trackId) {
-      fetchWorkflowSteps();
+  const fetchCollaborationSessions = async (trackId: bigint) => {
+    try {
+      const sessionsData = await musicService.getTrackCollaborationSessions(trackId);
+      setSessions(sessionsData);
+    } catch (err) {
+      console.error('Failed to fetch collaboration sessions:', err);
     }
-  }, [trackId]);
+  };
 
-  const createWorkflowStep = async (
-    stepName: string,
-    assignedTo: bigint[],
-    dueDate?: bigint,
-    notes?: string
-  ) => {
-    if (!trackId) return null;
-    
+  const fetchWorkflowTemplates = async (genre?: string) => {
+    try {
+      const templatesData = genre 
+        ? await musicService.getWorkflowTemplatesByGenre(genre)
+        : await musicService.getWorkflowTemplates();
+      setTemplates(templatesData);
+    } catch (err) {
+      console.error('Failed to fetch workflow templates:', err);
+    }
+  };
+
+  const createWorkflowStep = async (trackId: bigint, stepName: string, assignedTo: bigint[], dueDate?: bigint, notes?: string) => {
     try {
       const newStep = await musicService.createWorkflowStep(trackId, stepName, assignedTo, dueDate, notes);
       if (newStep) {
-        setWorkflowSteps(prev => [...prev, newStep]);
+        setSteps(prev => [...prev, newStep]);
         return newStep;
       }
       return null;
@@ -534,24 +496,122 @@ export const useWorkflow = (trackId?: bigint) => {
     }
   };
 
+  const updateWorkflowStepStatus = async (stepId: bigint, status: string, notes?: string) => {
+    try {
+      const updatedStep = await musicService.updateWorkflowStepStatus(stepId, status, notes);
+      if (updatedStep) {
+        setSteps(prev => 
+          prev.map(step => step.id === stepId ? updatedStep : step)
+        );
+        return updatedStep;
+      }
+      return null;
+    } catch (err) {
+      console.error('Failed to update workflow step status:', err);
+      return null;
+    }
+  };
+
+  const createCollaborationSession = async (trackId: bigint, sessionName: string, participants: bigint[], notes?: string) => {
+    try {
+      const newSession = await musicService.createCollaborationSession(trackId, sessionName, participants, notes);
+      if (newSession) {
+        setSessions(prev => [...prev, newSession]);
+        return newSession;
+      }
+      return null;
+    } catch (err) {
+      console.error('Failed to create collaboration session:', err);
+      return null;
+    }
+  };
+
   return {
-    workflowSteps,
+    steps,
+    sessions,
+    templates,
     loading,
     error,
     fetchWorkflowSteps,
+    fetchCollaborationSessions,
+    fetchWorkflowTemplates,
     createWorkflowStep,
+    updateWorkflowStepStatus,
+    createCollaborationSession,
+  };
+};
+
+// Hook for analytics
+export const useAnalytics = () => {
+  const [trackMetrics, setTrackMetrics] = useState<any>(null);
+  const [userMetrics, setUserMetrics] = useState<any>(null);
+  const [revenueInsights, setRevenueInsights] = useState<any>(null);
+  const [platformAnalytics, setPlatformAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTrackMetrics = async (trackId: bigint) => {
+    try {
+      setLoading(true);
+      const metrics = await musicService.getTrackPerformanceMetrics(trackId);
+      setTrackMetrics(metrics);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch track metrics');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserMetrics = async (userId: bigint) => {
+    try {
+      const metrics = await musicService.getUserEngagementMetrics(userId);
+      setUserMetrics(metrics);
+    } catch (err) {
+      console.error('Failed to fetch user metrics:', err);
+    }
+  };
+
+  const fetchRevenueInsights = async () => {
+    try {
+      const insights = await musicService.getRevenueInsights();
+      setRevenueInsights(insights);
+    } catch (err) {
+      console.error('Failed to fetch revenue insights:', err);
+    }
+  };
+
+  const fetchPlatformAnalytics = async () => {
+    try {
+      const analytics = await musicService.getPlatformAnalytics();
+      setPlatformAnalytics(analytics);
+    } catch (err) {
+      console.error('Failed to fetch platform analytics:', err);
+    }
+  };
+
+  return {
+    trackMetrics,
+    userMetrics,
+    revenueInsights,
+    platformAnalytics,
+    loading,
+    error,
+    fetchTrackMetrics,
+    fetchUserMetrics,
+    fetchRevenueInsights,
+    fetchPlatformAnalytics,
   };
 };
 
 // Hook for messaging
-export const useMessages = (userPrincipal?: string) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+export const useMessaging = () => {
+  const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMessages = async () => {
-    if (!userPrincipal) return;
-    
+  const fetchMessagesWithUser = async (userPrincipal: string) => {
     try {
       setLoading(true);
       const messagesData = await musicService.listMessagesWith(userPrincipal);
@@ -565,15 +625,9 @@ export const useMessages = (userPrincipal?: string) => {
     }
   };
 
-  useEffect(() => {
-    if (userPrincipal) {
-      fetchMessages();
-    }
-  }, [userPrincipal]);
-
-  const sendMessage = async (to: string, content: string) => {
+  const sendMessage = async (toPrincipal: string, content: string) => {
     try {
-      const newMessage = await musicService.sendMessage(to, content);
+      const newMessage = await musicService.sendMessage(toPrincipal, content);
       if (newMessage) {
         setMessages(prev => [...prev, newMessage]);
         return newMessage;
@@ -585,26 +639,58 @@ export const useMessages = (userPrincipal?: string) => {
     }
   };
 
+  const markMessageAsRead = async (messageId: bigint) => {
+    try {
+      const success = await musicService.markMessageRead(messageId);
+      if (success) {
+        setMessages(prev =>
+          prev.map(message =>
+            message.id === messageId ? { ...message, read: true } : message
+          )
+        );
+      }
+      return success;
+    } catch (err) {
+      console.error('Failed to mark message as read:', err);
+      return false;
+    }
+  };
+
   return {
     messages,
     loading,
     error,
-    fetchMessages,
+    fetchMessagesWithUser,
     sendMessage,
+    markMessageAsRead,
   };
 };
 
 // Hook for activity feed
 export const useActivity = () => {
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchUserActivity = async (userId: bigint) => {
+    try {
+      setLoading(true);
+      const activityData = await musicService.getUserActivity(userId);
+      setActivities(activityData);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch activity');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchRecentActivity = async (limit: number = 20) => {
     try {
       setLoading(true);
-      const activitiesData = await musicService.getRecentActivity(limit);
-      setActivities(activitiesData);
+      const activityData = await musicService.getRecentActivity(limit);
+      setActivities(activityData);
       setError(null);
     } catch (err) {
       setError('Failed to fetch recent activity');
@@ -614,41 +700,36 @@ export const useActivity = () => {
     }
   };
 
-  useEffect(() => {
-    fetchRecentActivity();
-  }, []);
-
   return {
     activities,
     loading,
     error,
+    fetchUserActivity,
     fetchRecentActivity,
   };
 };
 
 // Hook for user engagement metrics
-export const useUserEngagement = (userId?: bigint) => {
-  const [metrics, setMetrics] = useState<UserEngagementMetrics | null>(null);
+export const useUserEngagement = (userId: bigint) => {
+  const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMetrics = async () => {
-    if (!userId) return;
-    
-    try {
-      setLoading(true);
-      const metricsData = await musicService.getUserEngagementMetrics(userId);
-      setMetrics(metricsData);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch user engagement metrics');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setLoading(true);
+        const metricsData = await musicService.getUserEngagementMetrics(userId);
+        setMetrics(metricsData);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch engagement metrics');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (userId) {
       fetchMetrics();
     }
@@ -658,45 +739,47 @@ export const useUserEngagement = (userId?: bigint) => {
     metrics,
     loading,
     error,
-    fetchMetrics,
   };
 };
 
-// Hook for royalties
-export const useRoyalties = (artistId?: bigint) => {
-  const [balance, setBalance] = useState<bigint | null>(null);
+// Hook for royalties management
+export const useRoyalties = (artistId: bigint) => {
+  const [balance, setBalance] = useState<bigint>(BigInt(0));
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBalance = async () => {
-    if (!artistId) return;
-    
-    try {
-      setLoading(true);
-      const balanceData = await musicService.getRoyaltyBalance(artistId);
-      setBalance(balanceData);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch royalty balance');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchRoyaltyData = async () => {
+      try {
+        setLoading(true);
+        const [balanceData, historyData] = await Promise.all([
+          musicService.getRoyaltyBalance(artistId),
+          musicService.getPaymentHistory(artistId)
+        ]);
+        setBalance(balanceData);
+        setPaymentHistory(historyData);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch royalty data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (artistId) {
-      fetchBalance();
+      fetchRoyaltyData();
     }
   }, [artistId]);
 
-  const withdrawRoyalties = async (amount: bigint) => {
-    if (!artistId) return false;
-    
+  const withdrawRoyalties = async (artistId: bigint, amount: bigint) => {
     try {
       const success = await musicService.withdrawRoyalties(artistId, amount);
       if (success) {
-        await fetchBalance();
+        // Refresh balance after withdrawal
+        const newBalance = await musicService.getRoyaltyBalance(artistId);
+        setBalance(newBalance);
       }
       return success;
     } catch (err) {
@@ -707,9 +790,113 @@ export const useRoyalties = (artistId?: bigint) => {
 
   return {
     balance,
+    paymentHistory,
     loading,
     error,
-    fetchBalance,
     withdrawRoyalties,
+  };
+};
+
+// Hook for admin features
+export const useAdmin = () => {
+  const [reports, setReports] = useState<any[]>([]);
+  const [moderationQueue, setModerationQueue] = useState<any[]>([]);
+  const [suspensions, setSuspensions] = useState<any[]>([]);
+  const [appeals, setAppeals] = useState<any[]>([]);
+  const [auditLog, setAuditLog] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const reportsData = await musicService.listReports();
+      setReports(reportsData);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch reports');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchModerationQueue = async () => {
+    try {
+      const queueData = await musicService.listModerationQueue();
+      setModerationQueue(queueData);
+    } catch (err) {
+      console.error('Failed to fetch moderation queue:', err);
+    }
+  };
+
+  const fetchSuspensions = async () => {
+    try {
+      const suspensionsData = await musicService.listSuspensions();
+      setSuspensions(suspensionsData);
+    } catch (err) {
+      console.error('Failed to fetch suspensions:', err);
+    }
+  };
+
+  const fetchAppeals = async () => {
+    try {
+      const appealsData = await musicService.listSuspensionAppeals();
+      setAppeals(appealsData);
+    } catch (err) {
+      console.error('Failed to fetch appeals:', err);
+    }
+  };
+
+  const fetchAuditLog = async () => {
+    try {
+      const logData = await musicService.listAuditLog();
+      setAuditLog(logData);
+    } catch (err) {
+      console.error('Failed to fetch audit log:', err);
+    }
+  };
+
+  const reviewReport = async (reportId: bigint, status: string, notes?: string) => {
+    try {
+      const success = await musicService.reviewReport(reportId, status, notes);
+      if (success) {
+        await fetchReports(); // Refresh reports
+      }
+      return success;
+    } catch (err) {
+      console.error('Failed to review report:', err);
+      return false;
+    }
+  };
+
+  const reviewModerationItem = async (itemId: bigint, status: string, notes?: string) => {
+    try {
+      const success = await musicService.reviewModerationItem(itemId, status, notes);
+      if (success) {
+        await fetchModerationQueue(); // Refresh queue
+      }
+      return success;
+    } catch (err) {
+      console.error('Failed to review moderation item:', err);
+      return false;
+    }
+  };
+
+  return {
+    reports,
+    moderationQueue,
+    suspensions,
+    appeals,
+    auditLog,
+    loading,
+    error,
+    fetchReports,
+    fetchModerationQueue,
+    fetchSuspensions,
+    fetchAppeals,
+    fetchAuditLog,
+    reviewReport,
+    reviewModerationItem,
   };
 };

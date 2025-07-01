@@ -150,20 +150,107 @@ export interface WorkflowStep {
   dependencies: bigint[];
 }
 
-export interface Message {
+export interface CollaborationSession {
   id: bigint;
-  from: string;
-  to: string;
-  content: string;
-  timestamp: bigint;
-  read: boolean;
+  track_id: bigint;
+  session_name: string;
+  participants: bigint[];
+  start_time: bigint;
+  end_time?: bigint;
+  notes?: string;
+  recording_url?: string;
 }
 
-export interface Activity {
-  user_id: bigint;
+export interface WorkflowTemplate {
+  id: bigint;
+  name: string;
+  description: string;
+  steps: string[];
+  estimated_duration_days: number;
+  genre_specific: boolean;
+  target_genre?: string;
+}
+
+export interface RevenueInsights {
+  total_platform_revenue: bigint;
+  top_earning_tracks: [bigint, bigint][];
+  top_earning_artists: [bigint, bigint][];
+  revenue_by_genre: [string, bigint][];
+  monthly_revenue_trend: [bigint, bigint][];
+}
+
+export interface PlatformAnalytics {
+  total_tracks: bigint;
+  total_users: bigint;
+  total_artists: bigint;
+  total_plays: bigint;
+  total_revenue: bigint;
+  avg_track_rating: number;
+  most_popular_genres: [string, bigint][];
+  most_active_users: [bigint, bigint][];
+}
+
+export interface Report {
+  id: bigint;
+  reporter: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: string;
+  details?: string;
+  status: ReportStatus;
+  created_at: bigint;
+  reviewed_by?: string;
+  reviewed_at?: bigint;
+  resolution_notes?: string;
+}
+
+export interface ModerationQueueItem {
+  id: bigint;
+  target_type: ModerationTargetType;
+  target_id: string;
+  flagged_by?: string;
+  reason: string;
+  status: ModerationStatus;
+  created_at: bigint;
+  reviewed_by?: string;
+  reviewed_at?: bigint;
+  notes?: string;
+}
+
+export interface Suspension {
+  id: bigint;
+  target_type: string;
+  target_id: string;
+  reason: string;
+  imposed_by: string;
+  imposed_at: bigint;
+  duration_secs?: bigint;
+  status: string;
+  lifted_by?: string;
+  lifted_at?: bigint;
+  notes?: string;
+}
+
+export interface SuspensionAppeal {
+  id: bigint;
+  suspension_id: bigint;
+  submitted_by: string;
+  submitted_at: bigint;
+  content: string;
+  status: AppealStatus;
+  reviewed_by?: string;
+  reviewed_at?: bigint;
+  notes?: string;
+}
+
+export interface AuditLogEntry {
+  id: bigint;
+  admin: string;
   action: string;
+  target_type: string;
+  target_id: string;
   timestamp: bigint;
-  details: string;
+  details?: string;
 }
 
 class MusicService {
@@ -438,18 +525,6 @@ class MusicService {
     }
   }
 
-  async listTasksForUser(userId: bigint): Promise<Task[]> {
-    const actor = icpService.getActor();
-    if (!actor) return [];
-
-    try {
-      return await actor.list_tasks_for_user(userId);
-    } catch (error) {
-      console.error('Error listing tasks for user:', error);
-      return [];
-    }
-  }
-
   async updateTaskStatus(taskId: bigint, status: TaskStatus): Promise<Task | null> {
     const actor = icpService.getActor();
     if (!actor) return null;
@@ -463,19 +538,31 @@ class MusicService {
     }
   }
 
-  // Workflow management
-  async getTrackWorkflowSteps(trackId: bigint): Promise<WorkflowStep[]> {
+  async listTasksForTrack(trackId: bigint): Promise<Task[]> {
     const actor = icpService.getActor();
     if (!actor) return [];
 
     try {
-      return await actor.get_track_workflow_steps(trackId);
+      return await actor.list_tasks_for_track(trackId);
     } catch (error) {
-      console.error('Error getting track workflow steps:', error);
+      console.error('Error listing tasks for track:', error);
       return [];
     }
   }
 
+  async listTasksForUser(userId: bigint): Promise<Task[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.list_tasks_for_user(userId);
+    } catch (error) {
+      console.error('Error listing tasks for user:', error);
+      return [];
+    }
+  }
+
+  // Workflow management
   async createWorkflowStep(
     trackId: bigint,
     stepName: string,
@@ -501,118 +588,226 @@ class MusicService {
     }
   }
 
-  // Messaging
-  async sendMessage(to: string, content: string): Promise<Message | null> {
+  async updateWorkflowStepStatus(stepId: bigint, status: WorkflowStatus, notes?: string): Promise<WorkflowStep | null> {
     const actor = icpService.getActor();
     if (!actor) return null;
 
     try {
-      const result = await actor.send_message(to, content);
+      const result = await actor.update_workflow_step_status(stepId, { [status]: null }, notes ? [notes] : []);
       return result && result.length > 0 ? result[0] : null;
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error updating workflow step status:', error);
       return null;
     }
   }
 
-  async listMessagesWith(userPrincipal: string): Promise<Message[]> {
+  async getTrackWorkflowSteps(trackId: bigint): Promise<WorkflowStep[]> {
     const actor = icpService.getActor();
     if (!actor) return [];
 
     try {
-      return await actor.list_messages_with(userPrincipal);
+      return await actor.get_track_workflow_steps(trackId);
     } catch (error) {
-      console.error('Error listing messages:', error);
+      console.error('Error getting track workflow steps:', error);
       return [];
     }
   }
 
-  // Notifications
-  async listNotifications(): Promise<Notification[]> {
+  async createCollaborationSession(trackId: bigint, sessionName: string, participants: bigint[], notes?: string): Promise<CollaborationSession | null> {
+    const actor = icpService.getActor();
+    if (!actor) return null;
+
+    try {
+      const result = await actor.create_collaboration_session(trackId, sessionName, participants, notes ? [notes] : []);
+      return result && result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error('Error creating collaboration session:', error);
+      return null;
+    }
+  }
+
+  async getTrackCollaborationSessions(trackId: bigint): Promise<CollaborationSession[]> {
     const actor = icpService.getActor();
     if (!actor) return [];
 
     try {
-      return await actor.list_notifications();
+      return await actor.get_track_collaboration_sessions(trackId);
     } catch (error) {
-      console.error('Error listing notifications:', error);
+      console.error('Error getting track collaboration sessions:', error);
       return [];
     }
   }
 
-  async markNotificationRead(notificationId: bigint): Promise<boolean> {
+  async getWorkflowTemplates(): Promise<WorkflowTemplate[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.get_workflow_templates();
+    } catch (error) {
+      console.error('Error getting workflow templates:', error);
+      return [];
+    }
+  }
+
+  async getWorkflowTemplatesByGenre(genre: string): Promise<WorkflowTemplate[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.get_workflow_templates_by_genre(genre);
+    } catch (error) {
+      console.error('Error getting workflow templates by genre:', error);
+      return [];
+    }
+  }
+
+  // Advanced Analytics
+  async getRevenueInsights(): Promise<RevenueInsights | null> {
+    const actor = icpService.getActor();
+    if (!actor) return null;
+
+    try {
+      return await actor.get_revenue_insights();
+    } catch (error) {
+      console.error('Error getting revenue insights:', error);
+      return null;
+    }
+  }
+
+  async getPlatformAnalytics(): Promise<PlatformAnalytics | null> {
+    const actor = icpService.getActor();
+    if (!actor) return null;
+
+    try {
+      return await actor.get_platform_analytics();
+    } catch (error) {
+      console.error('Error getting platform analytics:', error);
+      return null;
+    }
+  }
+
+  // User Activity
+  async getUserActivity(userId: bigint): Promise<Activity[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.get_user_activity(userId);
+    } catch (error) {
+      console.error('Error getting user activity:', error);
+      return [];
+    }
+  }
+
+  // Message Management
+  async markMessageRead(messageId: bigint): Promise<boolean> {
     const actor = icpService.getActor();
     if (!actor) return false;
 
     try {
-      return await actor.mark_notification_read(notificationId);
+      return await actor.mark_message_read(messageId);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error marking message as read:', error);
       return false;
     }
   }
 
-  // Analytics
-  async getRecentActivity(limit: number): Promise<Activity[]> {
+  // Payment History
+  async getPaymentHistory(artistId: bigint): Promise<Payment[]> {
     const actor = icpService.getActor();
     if (!actor) return [];
 
     try {
-      return await actor.get_recent_activity(limit);
+      return await actor.get_payment_history(artistId);
     } catch (error) {
-      console.error('Error getting recent activity:', error);
+      console.error('Error getting payment history:', error);
       return [];
     }
   }
 
-  async getUserEngagementMetrics(userId: bigint): Promise<UserEngagementMetrics | null> {
+  // Admin Features
+  async listReports(): Promise<Report[]> {
     const actor = icpService.getActor();
-    if (!actor) return null;
+    if (!actor) return [];
 
     try {
-      const result = await actor.get_user_engagement_metrics(userId);
-      return result && result.length > 0 ? result[0] : null;
+      return await actor.list_reports();
     } catch (error) {
-      console.error('Error getting user engagement metrics:', error);
-      return null;
+      console.error('Error listing reports:', error);
+      return [];
     }
   }
 
-  async getTrackPerformanceMetrics(trackId: bigint): Promise<TrackPerformanceMetrics | null> {
-    const actor = icpService.getActor();
-    if (!actor) return null;
-
-    try {
-      const result = await actor.get_track_performance_metrics(trackId);
-      return result && result.length > 0 ? result[0] : null;
-    } catch (error) {
-      console.error('Error getting track performance metrics:', error);
-      return null;
-    }
-  }
-
-  // Royalties
-  async getRoyaltyBalance(artistId: bigint): Promise<bigint | null> {
-    const actor = icpService.getActor();
-    if (!actor) return null;
-
-    try {
-      return await actor.get_royalty_balance(artistId);
-    } catch (error) {
-      console.error('Error getting royalty balance:', error);
-      return null;
-    }
-  }
-
-  async withdrawRoyalties(artistId: bigint, amount: bigint): Promise<boolean> {
+  async reviewReport(reportId: bigint, status: ReportStatus, notes?: string): Promise<boolean> {
     const actor = icpService.getActor();
     if (!actor) return false;
 
     try {
-      return await actor.withdraw_royalties(artistId, amount);
+      return await actor.review_report(reportId, { [status]: null }, notes ? [notes] : []);
     } catch (error) {
-      console.error('Error withdrawing royalties:', error);
+      console.error('Error reviewing report:', error);
       return false;
+    }
+  }
+
+  async listModerationQueue(): Promise<ModerationQueueItem[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.list_moderation_queue();
+    } catch (error) {
+      console.error('Error listing moderation queue:', error);
+      return [];
+    }
+  }
+
+  async reviewModerationItem(itemId: bigint, status: ModerationStatus, notes?: string): Promise<boolean> {
+    const actor = icpService.getActor();
+    if (!actor) return false;
+
+    try {
+      return await actor.review_moderation_item(itemId, { [status]: null }, notes ? [notes] : []);
+    } catch (error) {
+      console.error('Error reviewing moderation item:', error);
+      return false;
+    }
+  }
+
+  async listSuspensions(): Promise<Suspension[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.list_suspensions();
+    } catch (error) {
+      console.error('Error listing suspensions:', error);
+      return [];
+    }
+  }
+
+  async listSuspensionAppeals(): Promise<SuspensionAppeal[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.list_suspension_appeals();
+    } catch (error) {
+      console.error('Error listing suspension appeals:', error);
+      return [];
+    }
+  }
+
+  async listAuditLog(): Promise<AuditLogEntry[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.list_audit_log();
+    } catch (error) {
+      console.error('Error listing audit log:', error);
+      return [];
     }
   }
 }
