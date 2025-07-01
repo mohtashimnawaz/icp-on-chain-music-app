@@ -39,7 +39,7 @@ export const useTracks = () => {
         trackData.title,
         trackData.description,
         trackData.contributors,
-        trackData.visibility as any,
+        trackData.visibility as 'Public' | 'Private' | 'InviteOnly',
         trackData.tags,
         trackData.genre
       );
