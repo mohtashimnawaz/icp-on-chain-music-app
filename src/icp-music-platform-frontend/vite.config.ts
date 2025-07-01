@@ -6,10 +6,10 @@ export default defineConfig({
   plugins: [react()],
   define: {
     global: 'globalThis',
-    'process.env': JSON.stringify({}),
-    'process.env.NODE_ENV': JSON.stringify('development'),
-    'process.version': JSON.stringify(''),
-    'process.versions': JSON.stringify({}),
+    'process.env': 'import.meta.env',
+    'process.version': '""',
+    'process.versions': '{}',
+    'process.browser': 'true'
   },
   server: {
     proxy: {
