@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Feature Tests</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .loading { background-color: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 8px 16px; }
+        iframe { width: 100%; height: 400px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>ICP Music Platform Frontend Tests</h1>
+    
+    <div class="test-section">
+        <h2>Frontend Application</h2>
+        <p>The frontend should be running at <a href="http://localhost:5174" target="_blank">http://localhost:5174</a></p>
+        <iframe src="http://localhost:5174" title="Frontend Application"></iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>Feature Test Checklist</h2>
+        <div id="test-results">
+            <div class="test-result loading">
+                <h3>✓ Frontend Loading</h3>
+                <p>Frontend server is running on port 5174</p>
+            </div>
+            <div class="test-result loading">
+                <h3>⏳ Backend Connection</h3>
+                <p>Testing connection to ICP backend...</p>
+            </div>
+            <div class="test-result loading">
+                <h3>⏳ Authentication</h3>
+                <p>Testing Internet Identity authentication...</p>
+            </div>
+            <div class="test-result loading">
+                <h3>⏳ Track Display</h3>
+                <p>Testing track listing and display...</p>
+            </div>
+            <div class="test-result loading">
+                <h3>⏳ Artist Information</h3>
+                <p>Testing artist data retrieval...</p>
+            </div>
+            <div class="test-result loading">
+                <h3>⏳ Navigation</h3>
+                <p>Testing page navigation and routing...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Manual Test Instructions</h2>
+        <ol>
+            <li><strong>Load Test:</strong> Check if the frontend loads without errors</li>
+            <li><strong>Authentication Test:</strong> Click "Connect with Internet Identity" and test login flow</li>
+            <li><strong>Navigation Test:</strong> Test all navigation links (Home, Explore, Studio, Profile)</li>
+            <li><strong>Track Listing Test:</strong> Go to Explore page and verify tracks are displayed</li>
+            <li><strong>Track Interaction Test:</strong> Test rating, commenting on tracks</li>
+            <li><strong>Artist View Test:</strong> Check if artist information displays correctly</li>
+            <li><strong>Playlist Test:</strong> Test playlist creation and management</li>
+            <li><strong>Responsive Test:</strong> Test on different screen sizes</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected Test Data</h2>
+        <h3>Artists:</h3>
+        <ul>
+            <li>ID: 1, Name: "Test Artist", Bio: "A passionate musician creating amazing tracks"</li>
+        </ul>
+        <h3>Tracks:</h3>
+        <ul>
+            <li>ID: 1, Title: "Workflow Test Track", Description: "Testing workflow management"</li>
+            <li>ID: 2, Title: "My First Track", Description: "An amazing electronic music piece"</li>
+            <li>ID: 3, Title: "Sunset Dreams", Description: "A beautiful ambient track perfect for relaxation"</li>
+        </ul>
+    </div>
+</body>
+</html>
