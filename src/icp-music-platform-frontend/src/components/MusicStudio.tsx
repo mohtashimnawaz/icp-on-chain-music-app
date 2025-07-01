@@ -18,10 +18,10 @@ export const MusicStudio: React.FC = () => {
   // Mock user ID for demo
   const mockUserId = BigInt(1);
   
-  const { collabRequests, sendCollabRequest, respondToRequest } = useCollabRequests(mockUserId);
-  const { tasks, createTask, updateTaskStatus } = useTasks(mockUserId);
-  const { workflowSteps, createWorkflowStep } = useWorkflow(selectedTrackId || undefined);
-  const { analytics, performanceMetrics } = useTrackAnalytics(selectedTrackId || undefined);
+  const { requests: collabRequests, sendCollabRequest, respondToCollabRequest } = useCollabRequests();
+  const { tasks, createTask, updateTaskStatus } = useTasks();
+  const { steps, createWorkflowStep } = useWorkflow();
+  const { trackMetrics } = useTrackAnalytics();
 
   const [newTrackForm, setNewTrackForm] = useState({
     title: '',
@@ -253,13 +253,13 @@ export const MusicStudio: React.FC = () => {
                             <div className="request-actions">
                               <button 
                                 className="btn-success"
-                                onClick={() => respondToRequest(request.id, true)}
+                                onClick={() => respondToCollabRequest(request.id, true)}
                               >
                                 Accept
                               </button>
                               <button 
                                 className="btn-danger"
-                                onClick={() => respondToRequest(request.id, false)}
+                                onClick={() => respondToCollabRequest(request.id, false)}
                               >
                                 Decline
                               </button>

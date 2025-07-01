@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthButton } from './components/AuthButton';
 import { Dashboard } from './components/Dashboard';
 import { MusicStudio } from './components/MusicStudio';
+import { MessageCenter } from './components/MessageCenter';
 import { useTracks, useArtists, usePlaylists, useNotifications } from './hooks/useMusicData';
 import { TrackList } from './components/TrackList';
 import './App.css';
@@ -231,6 +232,25 @@ const Admin = () => {
   );
 };
 
+const Messages = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="page">
+        <h2>Messages</h2>
+        <p>Please log in to access your messages.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <MessageCenter />
+    </div>
+  );
+};
+
 // Navigation component with authentication
 const Navbar = () => (
   <nav className="navbar">
@@ -242,6 +262,7 @@ const Navbar = () => (
       <Link to="/explore">Explore</Link>
       <Link to="/studio">Studio</Link>
       <Link to="/playlists">Playlists</Link>
+      <Link to="/messages">Messages</Link>
       <Link to="/profile">Profile</Link>
       <Link to="/admin">Admin</Link>
     </div>
@@ -262,6 +283,7 @@ function AppContent() {
             <Route path="/playlists" element={<Playlists />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>

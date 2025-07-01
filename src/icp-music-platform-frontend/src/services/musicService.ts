@@ -427,6 +427,31 @@ class MusicService {
     }
   }
 
+  // Royalty Management
+  async getRoyaltyBalance(artistId: bigint): Promise<bigint> {
+    const actor = icpService.getActor();
+    if (!actor) return BigInt(0);
+
+    try {
+      return await actor.get_royalty_balance(artistId);
+    } catch (error) {
+      console.error('Error getting royalty balance:', error);
+      return BigInt(0);
+    }
+  }
+
+  async withdrawRoyalties(artistId: bigint, amount: bigint): Promise<boolean> {
+    const actor = icpService.getActor();
+    if (!actor) return false;
+
+    try {
+      return await actor.withdraw_royalties(artistId, amount);
+    } catch (error) {
+      console.error('Error withdrawing royalties:', error);
+      return false;
+    }
+  }
+
   async incrementPlayCount(trackId: bigint): Promise<boolean> {
     const actor = icpService.getActor();
     if (!actor) return false;
@@ -827,6 +852,97 @@ class MusicService {
       return await actor.list_audit_log();
     } catch (error) {
       console.error('Error listing audit log:', error);
+      return [];
+    }
+  }
+
+  // Notifications
+  async listNotifications(): Promise<Notification[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.list_notifications();
+    } catch (error) {
+      console.error('Error listing notifications:', error);
+      return [];
+    }
+  }
+
+  async markNotificationRead(notificationId: bigint): Promise<boolean> {
+    const actor = icpService.getActor();
+    if (!actor) return false;
+
+    try {
+      return await actor.mark_notification_read(notificationId);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+  }
+
+  // Analytics Methods
+  async getTrackPerformanceMetrics(trackId: bigint): Promise<TrackPerformanceMetrics | null> {
+    const actor = icpService.getActor();
+    if (!actor) return null;
+
+    try {
+      const result = await actor.get_track_performance_metrics(trackId);
+      return result && result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error('Error getting track performance metrics:', error);
+      return null;
+    }
+  }
+
+  async getUserEngagementMetrics(userId: bigint): Promise<UserEngagementMetrics | null> {
+    const actor = icpService.getActor();
+    if (!actor) return null;
+
+    try {
+      const result = await actor.get_user_engagement_metrics(userId);
+      return result && result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error('Error getting user engagement metrics:', error);
+      return null;
+    }
+  }
+
+  // Messaging
+  async listMessagesWith(userPrincipal: string): Promise<Message[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.list_messages_with(userPrincipal);
+    } catch (error) {
+      console.error('Error listing messages:', error);
+      return [];
+    }
+  }
+
+  async sendMessage(to: string, content: string): Promise<Message | null> {
+    const actor = icpService.getActor();
+    if (!actor) return null;
+
+    try {
+      const result = await actor.send_message(to, content);
+      return result && result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return null;
+    }
+  }
+
+  // Activity
+  async getRecentActivity(limit: number): Promise<Activity[]> {
+    const actor = icpService.getActor();
+    if (!actor) return [];
+
+    try {
+      return await actor.get_recent_activity(limit);
+    } catch (error) {
+      console.error('Error getting recent activity:', error);
       return [];
     }
   }
