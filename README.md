@@ -1,13 +1,30 @@
-# ICP Music Platform
+# 🎵 ICP Music Platform
 
-A decentralized platform for musicians to collaborate, produce, and distribute music directly on the Internet Computer Protocol (ICP) blockchain. This platform ensures artists retain full rights and revenue.
+A comprehensive decentralized music platform built on the Internet Computer Protocol (ICP) with Rust backend and React frontend.
 
-## Tech Stack
-- **Backend:** Rust canisters (ICP)
-- **Frontend:** React (TypeScript)
-- **ICP Tools:** DFX, @dfinity/agent, @dfinity/auth-client
+## 🚀 Features
 
-## Features
+### Backend (Rust/Candid)
+- **User Management**: Artists, users with roles (User, Admin, Moderator)
+- **Music Management**: Tracks with versioning, ratings, comments, and analytics
+- **Collaboration**: Track collaboration requests, task management, invitations
+- **Social Features**: Following artists/tracks, notifications, playlists
+- **Moderation**: Reporting system, admin controls, content moderation
+- **Advanced Features**: Royalty splits, licensing contracts, payment tracking
+
+### Frontend (React/TypeScript)
+- **Modern UI**: Beautiful, responsive design with glass morphism effects
+- **Navigation**: Clean routing between Home, Explore, Playlists, Profile, and Admin
+- **Responsive**: Mobile-friendly design
+- **Interactive**: Hover effects and smooth animations
+
+## 🛠️ Tech Stack
+
+- **Backend**: Rust, Candid, IC CDK
+- **Frontend**: React 18, TypeScript, Vite
+- **Routing**: React Router v6
+- **Styling**: CSS3 with modern features
+- **Platform**: Internet Computer Protocol (ICP)
 - Artist profiles and authentication
 - Music collaboration and versioning
 - On-chain music publishing and distribution

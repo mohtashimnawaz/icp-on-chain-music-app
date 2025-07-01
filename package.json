@@ -9,7 +9,10 @@
     "prebuild": "npm run prebuild --workspaces --if-present",
     "pretest": "npm run prebuild --workspaces --if-present",
     "start": "npm start --workspaces --if-present",
-    "test": "npm test --workspaces --if-present"
+    "test": "npm test --workspaces --if-present",
+    "dev": "npm run dev --workspace=src/icp-music-platform-frontend",
+    "dev:frontend": "npm run dev --workspace=src/icp-music-platform-frontend",
+    "build:frontend": "npm run build --workspace=src/icp-music-platform-frontend"
   },
   "type": "module",
   "workspaces": [
