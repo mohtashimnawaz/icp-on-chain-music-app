@@ -42,6 +42,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);
+        // Continue with unauthenticated state if ICP service fails
+        setIsAuthenticated(false);
+        setPrincipal(null);
       } finally {
         setIsLoading(false);
       }
@@ -62,6 +65,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return success;
     } catch (error) {
       console.error('Login failed:', error);
+      setIsAuthenticated(false);
+      setPrincipal(null);
       return false;
     } finally {
       setIsLoading(false);

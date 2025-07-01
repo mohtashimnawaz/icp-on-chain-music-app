@@ -22,6 +22,11 @@ export const MusicStudio: React.FC = () => {
   const { tasks, createTask, updateTaskStatus } = useTasks();
   const { steps, createWorkflowStep } = useWorkflow();
   const { trackMetrics } = useTrackAnalytics();
+  
+  // Add fallback variables to prevent errors
+  const workflowSteps = steps || [];
+  const analytics = trackMetrics || null;
+  const performanceMetrics = null; // Not implemented yet
 
   const [newTrackForm, setNewTrackForm] = useState({
     title: '',
@@ -62,7 +67,7 @@ export const MusicStudio: React.FC = () => {
     e.preventDefault();
     if (!selectedTrackId) return;
     
-    const request = await sendCollabRequest(newCollabForm.to, selectedTrackId, newCollabForm.message);
+    const request = await sendCollabRequest(mockUserId, newCollabForm.to, selectedTrackId, newCollabForm.message);
     if (request) {
       setNewCollabForm({ to: BigInt(2), message: '' });
     }

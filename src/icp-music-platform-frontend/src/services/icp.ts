@@ -24,11 +24,11 @@ class ICPService {
     const identity = this.authClient.getIdentity();
     const agent = new HttpAgent({
       identity,
-      host: process.env.NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:4943',
+      host: import.meta.env.VITE_NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:4943',
     });
 
     // Fetch root key for development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.VITE_NODE_ENV === 'development') {
       await agent.fetchRootKey();
     }
 
@@ -42,9 +42,9 @@ class ICPService {
 
     return new Promise<boolean>((resolve) => {
       this.authClient!.login({
-        identityProvider: process.env.NODE_ENV === 'production' 
+        identityProvider: import.meta.env.VITE_NODE_ENV === 'production' 
           ? 'https://identity.ic0.app/#authorize'
-          : `http://localhost:4943/?canisterId=${process.env.CANISTER_ID_INTERNET_IDENTITY}#authorize`,
+          : `http://localhost:4943/?canisterId=${import.meta.env.VITE_CANISTER_ID_INTERNET_IDENTITY}#authorize`,
         onSuccess: async () => {
           this.isAuthenticated = true;
           await this.setupActor();
