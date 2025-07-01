@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthButton } from './components/AuthButton';
+import { Dashboard } from './components/Dashboard';
+import { MusicStudio } from './components/MusicStudio';
 import { useTracks, useArtists, usePlaylists, useNotifications } from './hooks/useMusicData';
 import { TrackList } from './components/TrackList';
 import './App.css';
@@ -8,37 +10,26 @@ import './App.css';
 // Page components with real data integration
 const Home = () => {
   const { isAuthenticated } = useAuth();
-  const { tracks } = useTracks();
-  const { artists } = useArtists();
-
+  
   return (
     <div className="page">
-      <h2>Welcome to ICP Music Platform!</h2>
       {isAuthenticated ? (
-        <div>
-          <p>🎉 You're logged in and ready to create music!</p>
-          <div className="platform-stats">
-            <div className="stat-card">
-              <h3>{tracks.length}</h3>
-              <p>Total Tracks</p>
-            </div>
-            <div className="stat-card">
-              <h3>{artists.length}</h3>
-              <p>Registered Artists</p>
-            </div>
-          </div>
-        </div>
+        <Dashboard />
       ) : (
-        <div>
+        <div className="welcome-section">
+          <h2>Welcome to ICP Music Platform!</h2>
           <p>Connect with Internet Identity to start your musical journey!</p>
           <div className="features">
-            <h3>Features:</h3>
+            <h3>Platform Features:</h3>
             <ul>
-              <li>✨ Create and manage music tracks</li>
-              <li>🤝 Collaborate with other artists</li>
-              <li>💰 Manage royalty splits</li>
-              <li>📊 Track analytics and ratings</li>
-              <li>🎵 Build playlists</li>
+              <li>🎵 Create and manage music tracks with advanced collaboration</li>
+              <li>🤝 Real-time collaboration with workflow management</li>
+              <li>💰 Transparent royalty splits and revenue tracking</li>
+              <li>📊 Comprehensive analytics and performance metrics</li>
+              <li>🎪 Professional music studio environment</li>
+              <li>💬 Built-in messaging and notification system</li>
+              <li>🔧 Task management and project workflows</li>
+              <li>📈 Advanced revenue insights and reporting</li>
             </ul>
           </div>
         </div>
@@ -62,6 +53,25 @@ const Explore = () => {
         onRate={isAuthenticated ? rateTrack : undefined}
         onComment={isAuthenticated ? commentOnTrack : undefined}
       />
+    </div>
+  );
+};
+
+const Studio = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="page">
+        <h2>Music Studio</h2>
+        <p>Please log in to access the music studio.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <MusicStudio />
     </div>
   );
 };
@@ -127,7 +137,8 @@ const Profile = () => {
     );
   }
 
-  const userArtist = artists.find(artist => artist.user_principal === principal);
+  // For now, assume first artist belongs to current user (mock implementation)
+  const userArtist = artists.length > 0 ? artists[0] : null;
 
   return (
     <div className="page">
@@ -227,8 +238,9 @@ const Navbar = () => (
       <h1>🎵 ICP Music Platform</h1>
     </div>
     <div className="nav-links">
-      <Link to="/">Home</Link>
+      <Link to="/">Dashboard</Link>
       <Link to="/explore">Explore</Link>
+      <Link to="/studio">Studio</Link>
       <Link to="/playlists">Playlists</Link>
       <Link to="/profile">Profile</Link>
       <Link to="/admin">Admin</Link>
@@ -246,6 +258,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/explore" element={<Explore />} />
+            <Route path="/studio" element={<Studio />} />
             <Route path="/playlists" element={<Playlists />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />

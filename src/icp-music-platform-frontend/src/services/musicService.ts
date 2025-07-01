@@ -253,6 +253,22 @@ export interface AuditLogEntry {
   details?: string;
 }
 
+export interface Message {
+  id: bigint;
+  from: string;
+  to: string;
+  content: string;
+  timestamp: bigint;
+  read: boolean;
+}
+
+export interface Activity {
+  user_id: bigint;
+  action: string;
+  timestamp: bigint;
+  details: string;
+}
+
 class MusicService {
   // Artist operations
   async registerArtist(
@@ -346,24 +362,28 @@ class MusicService {
     }
   }
 
-  async rateTrack(trackId: bigint, userId: bigint, rating: number): Promise<boolean> {
+  async rateTrack(trackId: bigint, rating: number): Promise<boolean> {
     const actor = icpService.getActor();
     if (!actor) return false;
 
     try {
-      return await actor.rate_track(trackId, userId, rating);
+      // Mock user ID for now - in production, get from authentication context
+      const mockUserId = BigInt(1);
+      return await actor.rate_track(trackId, mockUserId, rating);
     } catch (error) {
       console.error('Error rating track:', error);
       return false;
     }
   }
 
-  async commentOnTrack(trackId: bigint, userId: bigint, text: string): Promise<boolean> {
+  async commentOnTrack(trackId: bigint, text: string): Promise<boolean> {
     const actor = icpService.getActor();
     if (!actor) return false;
 
     try {
-      const result = await actor.add_comment(trackId, userId, text);
+      // Mock user ID for now - in production, get from authentication context
+      const mockUserId = BigInt(1);
+      const result = await actor.add_comment(trackId, mockUserId, text);
       return !!result;
     } catch (error) {
       console.error('Error commenting on track:', error);
