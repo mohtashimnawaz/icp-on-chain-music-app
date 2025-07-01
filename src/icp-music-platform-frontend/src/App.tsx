@@ -4,6 +4,7 @@ import { AuthButton } from './components/AuthButton';
 import { Dashboard } from './components/Dashboard';
 import { MusicStudio } from './components/MusicStudio';
 import { MessageCenter } from './components/MessageCenter';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { useTracks, useArtists, usePlaylists, useNotifications } from './hooks/useMusicData';
 import { TrackList } from './components/TrackList';
 import './App.css';
@@ -18,7 +19,7 @@ const Home = () => {
         <Dashboard />
       ) : (
         <div className="welcome-section">
-          <h2>Welcome to ICP Music Platform!</h2>
+          <h2>Welcome to SoundForge Studios!</h2>
           <p>Connect with Internet Identity to start your musical journey!</p>
           <div className="features">
             <h3>Platform Features:</h3>
@@ -253,20 +254,22 @@ const Messages = () => {
 
 // Navigation component with authentication
 const Navbar = () => (
-  <nav className="navbar">
-    <div className="nav-brand">
-      <h1>🎵 ICP Music Platform</h1>
+  <nav className="nav">
+    <div className="nav-content">
+      <div className="nav-brand">
+        <h1>🎵 SoundForge Studios</h1>
+      </div>
+      <div className="nav-links">
+        <Link to="/">Dashboard</Link>
+        <Link to="/explore">Explore</Link>
+        <Link to="/studio">Studio</Link>
+        <Link to="/playlists">Playlists</Link>
+        <Link to="/messages">Messages</Link>
+        <Link to="/profile">Profile</Link>
+        <Link to="/admin">Admin</Link>
+        <AuthButton />
+      </div>
     </div>
-    <div className="nav-links">
-      <Link to="/">Dashboard</Link>
-      <Link to="/explore">Explore</Link>
-      <Link to="/studio">Studio</Link>
-      <Link to="/playlists">Playlists</Link>
-      <Link to="/messages">Messages</Link>
-      <Link to="/profile">Profile</Link>
-      <Link to="/admin">Admin</Link>
-    </div>
-    <AuthButton />
   </nav>
 );
 
@@ -294,9 +297,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
