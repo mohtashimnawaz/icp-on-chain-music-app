@@ -37,23 +37,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log('Starting auth initialization...');
       try {
         // Check Internet Identity first
+        console.log('Initializing ICP service...');
         await icpService.init();
         const iiAuthenticated = icpService.getIsAuthenticated();
+        console.log('ICP authenticated:', iiAuthenticated);
         
         if (iiAuthenticated) {
           setIsAuthenticated(true);
           setWalletType('internet-identity');
           const principalId = icpService.getPrincipal();
           setPrincipal(principalId ? principalId.toString() : null);
+          console.log('ICP authentication successful');
         } else {
           // Check Plug wallet
+          console.log('Checking Plug wallet...');
           const plugAvailable = await plugWalletService.init();
+          console.log('Plug available:', plugAvailable);
+          
           if (plugAvailable && plugWalletService.getIsConnected()) {
             setIsAuthenticated(true);
             setWalletType('plug');
             setPrincipal(plugWalletService.getPrincipal());
+            console.log('Plug authentication successful');
+          } else {
+            console.log('No wallet authenticated');
           }
         }
       } catch (error) {
@@ -62,11 +72,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setPrincipal(null);
         setWalletType(null);
       } finally {
+        console.log('Auth initialization complete');
         setIsLoading(false);
       }
     };
 
-    initAuth();
+    initAuth().catch(error => {
+      console.error('Auth initialization promise failed:', error);
+      setIsLoading(false);
+    });
   }, []);
 
   const login = async (selectedWalletType: WalletType): Promise<boolean> => {

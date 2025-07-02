@@ -36,26 +36,46 @@ export class ErrorBoundary extends Component<Props, State> {
           fontFamily: 'monospace'
         }}>
           <h2>🚨 Something went wrong!</h2>
+          <p>The application encountered an error and needs to be reloaded.</p>
           <details style={{ whiteSpace: 'pre-wrap', marginTop: '1rem' }}>
-            <summary>Error Details</summary>
-            {this.state.error && this.state.error.toString()}
-            <br />
-            {this.state.error && this.state.error.stack}
+            <summary>Error Details (Click to expand)</summary>
+            <div style={{ marginTop: '1rem', fontSize: '14px' }}>
+              <strong>Error Message:</strong><br />
+              {this.state.error && this.state.error.toString()}
+              <br /><br />
+              <strong>Stack Trace:</strong><br />
+              {this.state.error && this.state.error.stack}
+            </div>
           </details>
-          <button 
-            onClick={() => this.setState({ hasError: false, error: undefined })}
-            style={{
-              marginTop: '1rem',
-              padding: '0.5rem 1rem',
-              backgroundColor: '#ff6b6b',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Try Again
-          </button>
+          <div style={{ marginTop: '1rem' }}>
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                marginRight: '1rem',
+                padding: '0.5rem 1rem',
+                backgroundColor: '#ff6b6b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Reload Page
+            </button>
+            <button 
+              onClick={() => this.setState({ hasError: false, error: undefined })}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#ffd700',
+                color: 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       );
     }
