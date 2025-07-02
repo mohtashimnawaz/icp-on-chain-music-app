@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { PlugWalletService } from '../services/plugWallet';
 import './WalletSelector.css';
 
 export const WalletSelector = () => {
@@ -8,30 +7,16 @@ export const WalletSelector = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
-  const isPlugAvailable = PlugWalletService.isPlugAvailable();
-  console.log('WalletSelector: Plug available:', isPlugAvailable);
-
-  const handleLogin = async (walletType: 'internet-identity' | 'plug') => {
+  const handleLogin = async (walletType: 'internet-identity') => {
     setIsLoading(true);
     setSelectedWallet(walletType);
-    
     try {
       const success = await login(walletType);
       if (!success) {
-        alert(`Failed to connect with ${walletType === 'plug' ? 'Plug Wallet' : 'Internet Identity'}`);
+        alert('Failed to connect with Internet Identity');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      if (walletType === 'plug' && !PlugWalletService.isPlugAvailable()) {
-        const installPlug = confirm(
-          'Plug wallet is not installed. Would you like to install it?'
-        );
-        if (installPlug) {
-          window.open(PlugWalletService.getInstallationUrl(), '_blank');
-        }
-      } else {
-        alert(`Error connecting to ${walletType === 'plug' ? 'Plug Wallet' : 'Internet Identity'}: ${error}`);
-      }
+      alert(`Error connecting to Internet Identity: ${error}`);
     } finally {
       setIsLoading(false);
       setSelectedWallet(null);
@@ -43,22 +28,7 @@ export const WalletSelector = () => {
       <div className="wallet-selector">
         <h3>Connect Your Wallet</h3>
         <p>Choose how you want to connect to SoundForge Studios</p>
-        
         <div className="wallet-options">
-          {/* Plug Wallet Option */}
-          <button
-            className={`wallet-option ${selectedWallet === 'plug' ? 'selected' : ''}`}
-            onClick={() => handleLogin('plug')}
-            disabled={isLoading}
-          >
-            <div className="wallet-icon">🔌</div>
-            <div className="wallet-info">
-              <h4>Plug Wallet</h4>
-              <p>{isPlugAvailable ? 'Connect with Plug Wallet' : 'Install Plug Wallet'}</p>
-            </div>
-            {selectedWallet === 'plug' && isLoading && <div className="spinner"></div>}
-          </button>
-
           {/* Internet Identity Option */}
           <button
             className={`wallet-option ${selectedWallet === 'internet-identity' ? 'selected' : ''}`}
@@ -73,7 +43,6 @@ export const WalletSelector = () => {
             {selectedWallet === 'internet-identity' && isLoading && <div className="spinner"></div>}
           </button>
         </div>
-
         <div className="wallet-info-section">
           <h4>Why connect a wallet?</h4>
           <ul>
@@ -87,7 +56,6 @@ export const WalletSelector = () => {
       </div>
     );
   } catch (error) {
-    console.error('Error rendering WalletSelector:', error);
     return (
       <div className="wallet-selector">
         <h3>Error</h3>

@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { icpService } from '../services/icp';
-import { plugWalletService, PlugWalletService } from '../services/plugWallet';
 
-type WalletType = 'internet-identity' | 'plug' | null;
+type WalletType = 'internet-identity' | null;
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -37,85 +36,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      console.log('Starting auth initialization...');
       try {
-        // Check Internet Identity first (but don't auto-login)
-        console.log('Initializing ICP service...');
         await icpService.init();
         const iiAuthenticated = icpService.getIsAuthenticated();
-        console.log('ICP authenticated:', iiAuthenticated);
-        
         if (iiAuthenticated) {
           setIsAuthenticated(true);
           setWalletType('internet-identity');
           const principalId = icpService.getPrincipal();
           setPrincipal(principalId ? principalId.toString() : null);
-          console.log('ICP authentication successful');
         } else {
-          // Just initialize Plug (don't auto-connect)
-          console.log('Checking Plug wallet availability...');
-          await plugWalletService.init();
-          console.log('Plug available:', PlugWalletService.isPlugAvailable());
-          
-          // Don't auto-login with Plug, just detect availability
-          console.log('No wallet authenticated - user needs to choose');
+          setIsAuthenticated(false);
+          setPrincipal(null);
+          setWalletType(null);
         }
       } catch (error) {
-        console.error('Auth initialization failed:', error);
         setIsAuthenticated(false);
         setPrincipal(null);
         setWalletType(null);
       } finally {
-        console.log('Auth initialization complete');
         setIsLoading(false);
       }
     };
-
-    initAuth().catch(error => {
-      console.error('Auth initialization promise failed:', error);
-      setIsLoading(false);
-    });
+    initAuth().catch(() => setIsLoading(false));
   }, []);
 
   const login = async (selectedWalletType: WalletType): Promise<boolean> => {
-    if (!selectedWalletType) return false;
-    
+    if (selectedWalletType !== 'internet-identity') return false;
     setIsLoading(true);
     try {
-      let success = false;
-      
-      if (selectedWalletType === 'internet-identity') {
-        success = await icpService.login();
-        if (success) {
-          const principalId = icpService.getPrincipal();
-          setPrincipal(principalId ? principalId.toString() : null);
-        }
-      } else if (selectedWalletType === 'plug') {
-        success = await plugWalletService.connect();
-        if (success) {
-          const plugPrincipal = plugWalletService.getPrincipal();
-          // Ensure principal is converted to string safely
-          let principalString: string | null = null;
-          if (plugPrincipal) {
-            try {
-              principalString = String(plugPrincipal);
-            } catch (error) {
-              console.error('Error converting principal to string:', error);
-              principalString = null;
-            }
-          }
-          setPrincipal(principalString);
-        }
-      }
-      
+      const success = await icpService.login();
       if (success) {
+        const principalId = icpService.getPrincipal();
+        setPrincipal(principalId ? principalId.toString() : null);
         setIsAuthenticated(true);
-        setWalletType(selectedWalletType);
+        setWalletType('internet-identity');
       }
-      
       return success;
     } catch (error) {
-      console.error('Login failed:', error);
       setIsAuthenticated(false);
       setPrincipal(null);
       setWalletType(null);
@@ -128,35 +85,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      if (walletType === 'internet-identity') {
-        await icpService.logout();
-      } else if (walletType === 'plug') {
-        await plugWalletService.disconnect();
-      }
-      
+      await icpService.logout();
       setIsAuthenticated(false);
       setPrincipal(null);
       setWalletType(null);
     } catch (error) {
-      console.error('Logout failed:', error);
+      // ignore
     } finally {
       setIsLoading(false);
     }
   };
 
   const getBalance = async () => {
-    if (!isAuthenticated) return null;
-    
-    try {
-      if (walletType === 'plug') {
-        return await plugWalletService.getBalance();
-      }
-      // Internet Identity doesn't have built-in balance checking
-      return null;
-    } catch (error) {
-      console.error('Failed to get balance:', error);
-      return null;
-    }
+    // Internet Identity doesn't have built-in balance checking
+    return null;
   };
 
   const value: AuthContextType = {

@@ -136,11 +136,8 @@
 /* Wallet Modal */
 .wallet-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
@@ -150,13 +147,19 @@
 }
 
 .wallet-modal {
-  position: relative;
-  background: var(--background);
+  background: var(--background, #181818);
   border-radius: 20px;
-  max-width: 90vw;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25), 0 1.5px 6px rgba(0,0,0,0.10);
+  max-width: 95vw;
+  width: 100%;
   max-height: 90vh;
-  overflow: auto;
-  animation: slideIn 0.3s ease;
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  transform: none;
 }
 
 .modal-close {
@@ -220,5 +223,13 @@
   .wallet-modal {
     margin: 1rem;
     max-width: calc(100vw - 2rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .wallet-modal {
+    padding: 1rem 0.5rem;
+    border-radius: 12px;
+    max-width: 98vw;
   }
 }

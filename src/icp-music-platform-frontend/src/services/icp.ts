@@ -67,20 +67,18 @@ class ICPService {
 
     // Always use production Internet Identity for better reliability
     try {
-      return new Promise<boolean>((resolve) => {
-        this.authClient!.login({
-          identityProvider: import.meta.env.VITE_II_URL || 'https://identity.ic0.app',
-          onSuccess: async () => {
-            this.isAuthenticated = true;
-            await this.setupActor();
-            resolve(true);
-          },
-          onError: (error) => {
-            console.error('Login error:', error);
-            resolve(false);
-          },
-        });
+      console.log('Triggering II login');
+      this.authClient!.login({
+        identityProvider: import.meta.env.VITE_II_URL || 'https://identity.ic0.app',
+        onSuccess: async () => {
+          this.isAuthenticated = true;
+          await this.setupActor();
+        },
+        onError: (error) => {
+          console.error('Login error:', error);
+        },
       });
+      return true;
     } catch (error) {
       console.error('Authentication service error:', error);
       return false;
