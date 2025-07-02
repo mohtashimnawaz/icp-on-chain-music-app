@@ -40,13 +40,11 @@ class ICPService {
   async login() {
     if (!this.authClient) await this.init();
 
-    // For development, try Internet Identity first, fallback to mock if it fails
+    // Always use production Internet Identity for better reliability
     try {
       return new Promise<boolean>((resolve) => {
         this.authClient!.login({
-          identityProvider: import.meta.env.VITE_NODE_ENV === 'production' 
-            ? 'https://identity.ic0.app'
-            : 'http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai',
+          identityProvider: import.meta.env.VITE_II_URL || 'https://identity.ic0.app',
           onSuccess: async () => {
             this.isAuthenticated = true;
             await this.setupActor();
@@ -54,18 +52,13 @@ class ICPService {
           },
           onError: (error) => {
             console.error('Login error:', error);
-            // Fallback to mock authentication for development
-            console.log('Falling back to mock authentication...');
-            this.isAuthenticated = true;
-            resolve(true);
+            resolve(false);
           },
         });
       });
     } catch (error) {
-      console.error('Authentication service not available, using mock auth:', error);
-      // Mock authentication for development when dfx is not running
-      this.isAuthenticated = true;
-      return true;
+      console.error('Authentication service error:', error);
+      return false;
     }
   }
 
