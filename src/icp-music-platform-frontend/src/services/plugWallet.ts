@@ -1,6 +1,6 @@
 // Plug wallet integration service
 import { HttpAgent } from '@dfinity/agent';
-import { createActor, canisterId } from '../../../declarations/icp-music-platform-backend';
+import { createActor, canisterId, idlFactory } from '../../../declarations/icp-music-platform-backend';
 
 // Type definitions for Plug wallet
 declare global {
@@ -54,6 +54,8 @@ export class PlugWalletService {
   private principal: string | null = null;
 
   async init() {
+    console.log('Initializing Plug wallet...');
+    
     // Check if Plug is available
     if (!window.ic?.plug) {
       console.warn('Plug wallet is not installed');
@@ -61,10 +63,15 @@ export class PlugWalletService {
     }
 
     try {
+      console.log('Checking Plug connection status...');
       this.isConnected = await window.ic.plug.isConnected();
+      console.log('Plug connected:', this.isConnected);
+      
       if (this.isConnected) {
+        console.log('Setting up Plug actor...');
         await this.setupActor();
         this.principal = await window.ic.plug.getPrincipal();
+        console.log('Plug principal:', this.principal);
       }
       return true;
     } catch (error) {
@@ -74,11 +81,23 @@ export class PlugWalletService {
   }
 
   async connect() {
+    console.log('Attempting to connect to Plug wallet...');
+    
     if (!window.ic?.plug) {
-      throw new Error('Plug wallet is not installed. Please install Plug browser extension.');
+      const error = 'Plug wallet is not installed. Please install Plug browser extension.';
+      console.error(error);
+      throw new Error(error);
     }
 
     try {
+      console.log('Calling Plug connect with config:', {
+        whitelist: [canisterId],
+        host: import.meta.env.VITE_NODE_ENV === 'production' 
+          ? 'https://ic0.app' 
+          : 'http://localhost:4943',
+        timeout: 50000,
+      });
+      
       const connected = await window.ic.plug.connect({
         whitelist: [canisterId],
         host: import.meta.env.VITE_NODE_ENV === 'production' 
@@ -87,12 +106,17 @@ export class PlugWalletService {
         timeout: 50000,
       });
 
+      console.log('Plug connect result:', connected);
+
       if (connected) {
         this.isConnected = true;
+        console.log('Setting up actor after connection...');
         await this.setupActor();
         this.principal = await window.ic.plug.getPrincipal();
+        console.log('Connection successful, principal:', this.principal);
         return true;
       }
+      console.warn('Plug connection failed - user may have rejected');
       return false;
     } catch (error) {
       console.error('Plug connection failed:', error);
@@ -120,11 +144,7 @@ export class PlugWalletService {
       // Use Plug's built-in createActor method
       this.actor = await window.ic.plug.createActor({
         canisterId,
-        interfaceFactory: ({ IDL }: any) => {
-          // Import the IDL factory from declarations
-          const { idlFactory } = require('../../../declarations/icp-music-platform-backend');
-          return idlFactory({ IDL });
-        },
+        interfaceFactory: idlFactory,
       });
     } catch (error) {
       console.error('Plug actor setup failed:', error);
