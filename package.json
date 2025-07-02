@@ -17,5 +17,8 @@
   "type": "module",
   "workspaces": [
     "src/icp-music-platform-frontend"
-  ]
+  ],
+  "dependencies": {
+    "@dfinity/principal": "^2.4.1"
+  }
 }
