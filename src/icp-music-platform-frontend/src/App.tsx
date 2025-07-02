@@ -20,7 +20,14 @@ const Home = () => {
       ) : (
         <div className="welcome-section">
           <h2>Welcome to SoundForge Studios!</h2>
-          <p>Connect with Internet Identity to start your musical journey!</p>
+          <p>Connect your wallet to start your musical journey!</p>
+          <div className="wallet-connect-help">
+            <p>👆 Click "Connect Wallet" in the top navigation to choose between:</p>
+            <div className="wallet-options-preview">
+              <div className="wallet-option">🔌 Plug Wallet</div>
+              <div className="wallet-option">🔐 Internet Identity</div>
+            </div>
+          </div>
           <div className="features">
             <h3>Platform Features:</h3>
             <ul>

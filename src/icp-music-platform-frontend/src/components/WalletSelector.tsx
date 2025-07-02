@@ -8,6 +8,12 @@ export const WalletSelector = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
+  // Debug: log render and Plug availability
+  console.log('WalletSelector rendered');
+  console.log('Plug available:', PlugWalletService.isPlugAvailable());
+  console.log('window.ic:', window.ic);
+  console.log('window.ic?.plug:', window.ic?.plug);
+
   const handleLogin = async (walletType: 'internet-identity' | 'plug') => {
     setIsLoading(true);
     setSelectedWallet(walletType);
@@ -35,52 +41,63 @@ export const WalletSelector = () => {
     }
   };
 
-  return (
-    <div className="wallet-selector">
-      <h3>Connect Your Wallet</h3>
-      <p>Choose how you want to connect to SoundForge Studios</p>
-      
-      <div className="wallet-options">
-        <button
-          className={`wallet-option ${selectedWallet === 'plug' ? 'loading' : ''}`}
-          onClick={() => handleLogin('plug')}
-          disabled={isLoading}
-        >
-          <div className="wallet-icon">🔌</div>
-          <div className="wallet-info">
-            <h4>Plug Wallet</h4>
-            <p>Browser extension wallet with ICP and token support</p>
-            {!PlugWalletService.isPlugAvailable() && (
-              <span className="wallet-status">Not Installed</span>
-            )}
-          </div>
-          {selectedWallet === 'plug' && isLoading && <div className="spinner"></div>}
-        </button>
+  try {
+    return (
+      <div className="wallet-selector">
+        <h3>Connect Your Wallet</h3>
+        <p>Choose how you want to connect to SoundForge Studios</p>
+        
+        <div className="wallet-options">
+          <button
+            className={`wallet-option ${selectedWallet === 'plug' ? 'loading' : ''}`}
+            onClick={() => handleLogin('plug')}
+            disabled={isLoading}
+          >
+            <div className="wallet-icon">🔌</div>
+            <div className="wallet-info">
+              <h4>Plug Wallet</h4>
+              <p>Browser extension wallet with ICP and token support</p>
+              {!PlugWalletService.isPlugAvailable() && (
+                <span className="wallet-status">Not Installed</span>
+              )}
+            </div>
+            {selectedWallet === 'plug' && isLoading && <div className="spinner"></div>}
+          </button>
 
-        <button
-          className={`wallet-option ${selectedWallet === 'internet-identity' ? 'loading' : ''}`}
-          onClick={() => handleLogin('internet-identity')}
-          disabled={isLoading}
-        >
-          <div className="wallet-icon">🔐</div>
-          <div className="wallet-info">
-            <h4>Internet Identity</h4>
-            <p>Secure, anonymous authentication by DFINITY</p>
-          </div>
-          {selectedWallet === 'internet-identity' && isLoading && <div className="spinner"></div>}
-        </button>
-      </div>
+          <button
+            className={`wallet-option ${selectedWallet === 'internet-identity' ? 'loading' : ''}`}
+            onClick={() => handleLogin('internet-identity')}
+            disabled={isLoading}
+          >
+            <div className="wallet-icon">🔐</div>
+            <div className="wallet-info">
+              <h4>Internet Identity</h4>
+              <p>Secure, anonymous authentication by DFINITY</p>
+            </div>
+            {selectedWallet === 'internet-identity' && isLoading && <div className="spinner"></div>}
+          </button>
+        </div>
 
-      <div className="wallet-info-section">
-        <h4>Why connect a wallet?</h4>
-        <ul>
-          <li>🎵 Create and manage your music tracks</li>
-          <li>💰 Receive royalty payments automatically</li>
-          <li>🤝 Collaborate with other artists</li>
-          <li>📊 Access detailed analytics</li>
-          <li>💬 Send and receive messages</li>
-        </ul>
+        <div className="wallet-info-section">
+          <h4>Why connect a wallet?</h4>
+          <ul>
+            <li>🎵 Create and manage your music tracks</li>
+            <li>💰 Receive royalty payments automatically</li>
+            <li>🤝 Collaborate with other artists</li>
+            <li>📊 Access detailed analytics</li>
+            <li>💬 Send and receive messages</li>
+          </ul>
+        </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error('Error rendering WalletSelector:', error);
+    return (
+      <div className="wallet-selector">
+        <h3>Error</h3>
+        <p>There was an error loading the wallet selector. Please refresh the page.</p>
+        <pre style={{ color: 'red', fontSize: '12px' }}>{String(error)}</pre>
+      </div>
+    );
+  }
 };

@@ -60,7 +60,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           if (plugAvailable && plugWalletService.getIsConnected()) {
             setIsAuthenticated(true);
             setWalletType('plug');
-            setPrincipal(plugWalletService.getPrincipal());
+            const plugPrincipal = plugWalletService.getPrincipal();
+            console.log('Plug principal raw:', plugPrincipal);
+            // Ensure principal is converted to string safely
+            let principalString: string | null = null;
+            if (plugPrincipal) {
+              try {
+                principalString = String(plugPrincipal);
+              } catch (error) {
+                console.error('Error converting principal to string:', error);
+                principalString = null;
+              }
+            }
+            console.log('Plug principal string:', principalString);
+            setPrincipal(principalString);
             console.log('Plug authentication successful');
           } else {
             console.log('No wallet authenticated');
@@ -99,7 +112,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } else if (selectedWalletType === 'plug') {
         success = await plugWalletService.connect();
         if (success) {
-          setPrincipal(plugWalletService.getPrincipal());
+          const plugPrincipal = plugWalletService.getPrincipal();
+          // Ensure principal is converted to string safely
+          let principalString: string | null = null;
+          if (plugPrincipal) {
+            try {
+              principalString = String(plugPrincipal);
+            } catch (error) {
+              console.error('Error converting principal to string:', error);
+              principalString = null;
+            }
+          }
+          setPrincipal(principalString);
         }
       }
       
