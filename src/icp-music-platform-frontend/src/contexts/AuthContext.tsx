@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { icpService } from '../services/icp';
-import { plugWalletService } from '../services/plugWallet';
+import { plugWalletService, PlugWalletService } from '../services/plugWallet';
 
 type WalletType = 'internet-identity' | 'plug' | null;
 
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const initAuth = async () => {
       console.log('Starting auth initialization...');
       try {
-        // Check Internet Identity first
+        // Check Internet Identity first (but don't auto-login)
         console.log('Initializing ICP service...');
         await icpService.init();
         const iiAuthenticated = icpService.getIsAuthenticated();
@@ -52,32 +52,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setPrincipal(principalId ? principalId.toString() : null);
           console.log('ICP authentication successful');
         } else {
-          // Check Plug wallet
-          console.log('Checking Plug wallet...');
-          const plugAvailable = await plugWalletService.init();
-          console.log('Plug available:', plugAvailable);
+          // Just initialize Plug (don't auto-connect)
+          console.log('Checking Plug wallet availability...');
+          await plugWalletService.init();
+          console.log('Plug available:', PlugWalletService.isPlugAvailable());
           
-          if (plugAvailable && plugWalletService.getIsConnected()) {
-            setIsAuthenticated(true);
-            setWalletType('plug');
-            const plugPrincipal = plugWalletService.getPrincipal();
-            console.log('Plug principal raw:', plugPrincipal);
-            // Ensure principal is converted to string safely
-            let principalString: string | null = null;
-            if (plugPrincipal) {
-              try {
-                principalString = String(plugPrincipal);
-              } catch (error) {
-                console.error('Error converting principal to string:', error);
-                principalString = null;
-              }
-            }
-            console.log('Plug principal string:', principalString);
-            setPrincipal(principalString);
-            console.log('Plug authentication successful');
-          } else {
-            console.log('No wallet authenticated');
-          }
+          // Don't auto-login with Plug, just detect availability
+          console.log('No wallet authenticated - user needs to choose');
         }
       } catch (error) {
         console.error('Auth initialization failed:', error);

@@ -8,11 +8,8 @@ export const WalletSelector = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
-  // Debug: log render and Plug availability
-  console.log('WalletSelector rendered');
-  console.log('Plug available:', PlugWalletService.isPlugAvailable());
-  console.log('window.ic:', window.ic);
-  console.log('window.ic?.plug:', window.ic?.plug);
+  const isPlugAvailable = PlugWalletService.isPlugAvailable();
+  console.log('WalletSelector: Plug available:', isPlugAvailable);
 
   const handleLogin = async (walletType: 'internet-identity' | 'plug') => {
     setIsLoading(true);
@@ -48,24 +45,23 @@ export const WalletSelector = () => {
         <p>Choose how you want to connect to SoundForge Studios</p>
         
         <div className="wallet-options">
+          {/* Plug Wallet Option */}
           <button
-            className={`wallet-option ${selectedWallet === 'plug' ? 'loading' : ''}`}
+            className={`wallet-option ${selectedWallet === 'plug' ? 'selected' : ''}`}
             onClick={() => handleLogin('plug')}
             disabled={isLoading}
           >
             <div className="wallet-icon">🔌</div>
             <div className="wallet-info">
               <h4>Plug Wallet</h4>
-              <p>Browser extension wallet with ICP and token support</p>
-              {!PlugWalletService.isPlugAvailable() && (
-                <span className="wallet-status">Not Installed</span>
-              )}
+              <p>{isPlugAvailable ? 'Connect with Plug Wallet' : 'Install Plug Wallet'}</p>
             </div>
             {selectedWallet === 'plug' && isLoading && <div className="spinner"></div>}
           </button>
 
+          {/* Internet Identity Option */}
           <button
-            className={`wallet-option ${selectedWallet === 'internet-identity' ? 'loading' : ''}`}
+            className={`wallet-option ${selectedWallet === 'internet-identity' ? 'selected' : ''}`}
             onClick={() => handleLogin('internet-identity')}
             disabled={isLoading}
           >
