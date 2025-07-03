@@ -332,4 +332,16 @@ export async function withdrawRoyalties(artistId: bigint, amount: bigint) {
 
 export async function getPaymentHistory(artistId: bigint) {
   return await getMusicActor().get_payment_history(artistId);
+}
+
+export async function followTrack(trackId: bigint) {
+  return await getMusicActor().follow_track(trackId);
+}
+
+export async function unfollowTrack(trackId: bigint) {
+  return await getMusicActor().unfollow_track(trackId);
+}
+
+export async function listFollowedTracks() {
+  return await getMusicActor().list_followed_tracks();
 } 
