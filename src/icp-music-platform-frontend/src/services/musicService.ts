@@ -83,4 +83,16 @@ export async function followArtist(principal: string) {
 
 export async function unfollowArtist(principal: string) {
   return await getMusicActor().unfollow_artist(Principal.fromText(principal));
+}
+
+export async function getUserEngagementMetrics(userId: bigint) {
+  return await getMusicActor().get_user_engagement_metrics(userId);
+}
+
+export async function searchTracksByContributor(artistId: bigint) {
+  return await getMusicActor().search_tracks_by_contributor(artistId);
+}
+
+export async function listFollowedArtists() {
+  return await getMusicActor().list_followed_artists();
 } 

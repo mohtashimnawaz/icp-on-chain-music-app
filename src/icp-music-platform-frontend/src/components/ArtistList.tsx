@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { listArtists } from '../services/musicService';
+import { useNavigate } from 'react-router-dom';
 
 const ArtistList: React.FC = () => {
   const [artists, setArtists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchArtists = async () => {
@@ -36,7 +38,7 @@ const ArtistList: React.FC = () => {
             <li key={idx} style={{ marginBottom: 16 }}>
               <strong>{artist.name}</strong> <br />
               <span>{artist.bio}</span> <br />
-              <button disabled>View Details</button>
+              <button onClick={() => navigate(`/artist/${artist.id}`)}>View Details</button>
             </li>
           ))}
         </ul>
