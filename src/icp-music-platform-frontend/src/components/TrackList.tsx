@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload } from '../services/musicService';
+import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent } from '../services/musicService';
+import ReportModal from './ReportModal';
+import type { ReportTargetType } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
+
+const TRACK_TARGET_TYPE: ReportTargetType = { Track: null };
 
 const TrackList: React.FC = () => {
   const [tracks, setTracks] = useState<any[]>([]);
@@ -11,6 +15,9 @@ const TrackList: React.FC = () => {
   const [actionError, setActionError] = useState<{ [id: string]: string | null }>({});
   const [editMode, setEditMode] = useState<{ [id: string]: boolean }>({});
   const [editFields, setEditFields] = useState<{ [id: string]: { title: string; description: string; contributors: string } }>({});
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportTrackId, setReportTrackId] = useState<string | null>(null);
+  const [reportError, setReportError] = useState('');
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -135,6 +142,29 @@ const TrackList: React.FC = () => {
     }
   };
 
+  const handleOpenReport = (trackId: string) => {
+    setReportTrackId(trackId);
+    setReportOpen(true);
+    setReportError('');
+  };
+
+  const handleCloseReport = () => {
+    setReportOpen(false);
+    setReportTrackId(null);
+    setReportError('');
+  };
+
+  const handleSubmitReport = async (reason: string, details: string) => {
+    if (!reportTrackId) return;
+    try {
+      await reportContent(TRACK_TARGET_TYPE, reportTrackId, reason, details);
+      setReportOpen(false);
+      setReportTrackId(null);
+    } catch {
+      setReportError('Failed to submit report.');
+    }
+  };
+
   if (loading) return <div style={{ padding: '2rem' }}>Loading tracks...</div>;
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>{error}</div>;
 
@@ -214,6 +244,7 @@ const TrackList: React.FC = () => {
                   <button onClick={() => handleEdit(track)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8, marginRight: 8 }}>Edit</button>
                   <button onClick={() => handleDelete(track.id)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8, marginRight: 8, color: 'red' }}>Delete</button>
                   <button onClick={() => handleDownload(track.id, track.title)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8 }}>Download</button>
+                  <button onClick={() => handleOpenReport(track.id.toString())} style={{ marginLeft: 8 }}>Report</button>
                 </>
               )}
               {actionError[track.id.toString()] && <div style={{ color: 'red', marginTop: 4 }}>{actionError[track.id.toString()]}</div>}
@@ -231,6 +262,14 @@ const TrackList: React.FC = () => {
           ))}
         </ul>
       )}
+      <ReportModal
+        open={reportOpen}
+        onClose={handleCloseReport}
+        onSubmit={handleSubmitReport}
+        targetType={TRACK_TARGET_TYPE}
+        targetId={reportTrackId || ''}
+      />
+      {reportError && <div style={{ color: 'red' }}>{reportError}</div>}
     </div>
   );
 };
