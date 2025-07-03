@@ -3,6 +3,9 @@ import { Routes, Route, Link } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import MusicStudio from './components/MusicStudio';
 import TrackList from './components/TrackList';
+import MusicUpload from './components/MusicUpload';
+import Collaboration from './components/Collaboration';
+import Analytics from './components/Analytics';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -21,7 +24,10 @@ const App: React.FC = () => {
         <Link to="/">Home</Link> |{' '}
         <Link to="/dashboard">Dashboard</Link> |{' '}
         <Link to="/studio">Music Studio</Link> |{' '}
-        <Link to="/tracks">Track List</Link>
+        <Link to="/tracks">Track List</Link> |{' '}
+        <Link to="/upload">Music Upload</Link> |{' '}
+        <Link to="/collaboration">Collaboration</Link> |{' '}
+        <Link to="/analytics">Analytics</Link>
         <span style={{ float: 'right' }}>
           {isAuthenticated ? (
             <>
@@ -41,6 +47,9 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/studio" element={<MusicStudio />} />
         <Route path="/tracks" element={<TrackList />} />
+        <Route path="/upload" element={<MusicUpload />} />
+        <Route path="/collaboration" element={<Collaboration />} />
+        <Route path="/analytics" element={<Analytics />} />
       </Routes>
     </div>
   );
