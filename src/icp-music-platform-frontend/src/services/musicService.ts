@@ -298,22 +298,6 @@ export async function createWorkflowTemplate(name: string, description: string, 
   );
 }
 
-export async function getUserProfile() {
-  return await getMusicActor().get_user();
-}
-
-export async function updateUserProfile(username: string, bio?: string, avatarUrl?: string) {
-  return await getMusicActor().update_user(
-    username,
-    bio ? [bio] : [],
-    avatarUrl ? [avatarUrl] : []
-  );
-}
-
-export async function searchUsers(query: string) {
-  return await getMusicActor().search_users_by_username(query);
-}
-
 export async function getUserActivity(userId: bigint) {
   return await getMusicActor().get_user_activity(userId);
 } 
