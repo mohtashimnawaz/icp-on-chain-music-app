@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense, getTrackVersions, revertToVersion, compareVersions } from '../services/musicService';
+import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense, getTrackVersions, revertToVersion, compareVersions, getTrackWorkflowSteps, createWorkflowStep, updateWorkflowStepStatus } from '../services/musicService';
 import ReportModal from './ReportModal';
-import type { ReportTargetType, LicenseType, TrackLicense, TrackVersion, VersionComparison } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
+import type { ReportTargetType, LicenseType, TrackLicense, TrackVersion, VersionComparison, WorkflowStatus, WorkflowStep, WorkflowTemplate } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 
 const TRACK_TARGET_TYPE: ReportTargetType = { Track: null };
 
@@ -37,6 +37,14 @@ const TrackList: React.FC = () => {
   const [comparison, setComparison] = useState<{ [id: string]: VersionComparison | null }>({});
   const [revertLoading, setRevertLoading] = useState<{ [id: string]: boolean }>({});
   const [versionError, setVersionError] = useState<{ [id: string]: string | null }>({});
+  const [workflowOpen, setWorkflowOpen] = useState<{ [id: string]: boolean }>({});
+  const [workflowSteps, setWorkflowSteps] = useState<{ [id: string]: WorkflowStep[] }>({});
+  const [workflowLoading, setWorkflowLoading] = useState<{ [id: string]: boolean }>({});
+  const [workflowError, setWorkflowError] = useState<{ [id: string]: string | null }>({});
+  const [newStep, setNewStep] = useState<{ [id: string]: { name: string; assignees: string; due: string; notes: string } }>({});
+  const [addStepLoading, setAddStepLoading] = useState<{ [id: string]: boolean }>({});
+  const [addStepError, setAddStepError] = useState<{ [id: string]: string | null }>({});
+  const [updateStepLoading, setUpdateStepLoading] = useState<{ [id: string]: boolean }>({});
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -283,6 +291,63 @@ const TrackList: React.FC = () => {
     }
   };
 
+  const handleToggleWorkflow = async (trackId: bigint) => {
+    setWorkflowOpen(prev => ({ ...prev, [trackId.toString()]: !prev[trackId.toString()] }));
+    if (!workflowSteps[trackId.toString()]) {
+      setWorkflowLoading(prev => ({ ...prev, [trackId.toString()]: true }));
+      try {
+        const steps = await getTrackWorkflowSteps(trackId);
+        setWorkflowSteps(prev => ({ ...prev, [trackId.toString()]: steps }));
+      } catch {
+        setWorkflowError(prev => ({ ...prev, [trackId.toString()]: 'Failed to load workflow steps.' }));
+      } finally {
+        setWorkflowLoading(prev => ({ ...prev, [trackId.toString()]: false }));
+      }
+    }
+  };
+
+  const handleNewStepChange = (trackId: bigint, field: string, value: string) => {
+    setNewStep(prev => ({
+      ...prev,
+      [trackId.toString()]: {
+        ...prev[trackId.toString()],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleAddStep = async (trackId: bigint) => {
+    setAddStepLoading(prev => ({ ...prev, [trackId.toString()]: true }));
+    setAddStepError(prev => ({ ...prev, [trackId.toString()]: null }));
+    try {
+      const step = newStep[trackId.toString()] || { name: '', assignees: '', due: '', notes: '' };
+      const assignees = step.assignees.split(',').map(id => id.trim()).filter(Boolean).map(id => BigInt(id));
+      const dueDate = step.due ? BigInt(new Date(step.due).getTime() / 1000) : undefined;
+      const created = await createWorkflowStep(trackId, step.name, assignees, dueDate, step.notes);
+      if (!created) throw new Error('Failed to create step');
+      const steps = await getTrackWorkflowSteps(trackId);
+      setWorkflowSteps(prev => ({ ...prev, [trackId.toString()]: steps }));
+      setNewStep(prev => ({ ...prev, [trackId.toString()]: { name: '', assignees: '', due: '', notes: '' } }));
+    } catch {
+      setAddStepError(prev => ({ ...prev, [trackId.toString()]: 'Failed to add step.' }));
+    } finally {
+      setAddStepLoading(prev => ({ ...prev, [trackId.toString()]: false }));
+    }
+  };
+
+  const handleUpdateStepStatus = async (trackId: bigint, stepId: bigint, status: WorkflowStatus) => {
+    setUpdateStepLoading(prev => ({ ...prev, [stepId.toString()]: true }));
+    try {
+      await updateWorkflowStepStatus(stepId, status);
+      const steps = await getTrackWorkflowSteps(trackId);
+      setWorkflowSteps(prev => ({ ...prev, [trackId.toString()]: steps }));
+    } catch {
+      setWorkflowError(prev => ({ ...prev, [trackId.toString()]: 'Failed to update step status.' }));
+    } finally {
+      setUpdateStepLoading(prev => ({ ...prev, [stepId.toString()]: false }));
+    }
+  };
+
   if (loading) return <div style={{ padding: '2rem' }}>Loading tracks...</div>;
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>{error}</div>;
 
@@ -478,6 +543,73 @@ const TrackList: React.FC = () => {
                           </>
                         ) : <span>No version history.</span>}
                         {versionError[track.id.toString()] && <div style={{ color: 'red' }}>{versionError[track.id.toString()]}</div>}
+                      </div>
+                    )}
+                    <button onClick={() => handleToggleWorkflow(track.id)} style={{ marginTop: 8 }}>
+                      {workflowOpen[track.id.toString()] ? 'Hide Workflow' : 'Show Workflow'}
+                    </button>
+                    {workflowOpen[track.id.toString()] && (
+                      <div style={{ marginTop: 8, background: '#1a1a1a', padding: 12, borderRadius: 6 }}>
+                        {workflowLoading[track.id.toString()] ? (
+                          <span>Loading workflow steps...</span>
+                        ) : workflowSteps[track.id.toString()] && workflowSteps[track.id.toString()].length > 0 ? (
+                          <>
+                            <strong>Workflow Steps:</strong>
+                            <ul>
+                              {workflowSteps[track.id.toString()]?.map((step, i) => (
+                                <li key={step.id?.toString() ?? i} style={{ marginBottom: 8 }}>
+                                  <b>{step.step_name ?? ''}</b> | Status: {Object.keys(step.status ?? {})[0] ?? ''} | Assigned to: {((step.assigned_to as unknown as bigint[]) ?? []).map((a: bigint) => a.toString()).join(', ')}
+                                  {step.due_date && step.due_date[0] && (
+                                    <> | Due: {new Date(Number(step.due_date[0]) * 1000).toLocaleDateString()}</>
+                                  )}
+                                  {step.notes && step.notes[0] && (
+                                    <> | Notes: {step.notes[0]}</>
+                                  )}
+                                  {Object.keys(step.status ?? {})[0] !== 'Completed' && (
+                                    <button onClick={() => handleUpdateStepStatus(track.id, step.id, { Completed: null } as unknown as WorkflowStatus)} disabled={updateStepLoading[step.id?.toString() ?? '']} style={{ marginLeft: 8 }}>
+                                      {updateStepLoading[step.id?.toString() ?? ''] ? 'Marking...' : 'Mark Completed'}
+                                    </button>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : <span>No workflow steps.</span>}
+                        <div style={{ marginTop: 12, borderTop: '1px solid #333', paddingTop: 8 }}>
+                          <strong>Add Workflow Step:</strong><br />
+                          <input
+                            type="text"
+                            placeholder="Step name"
+                            value={newStep[track.id.toString()]?.name || ''}
+                            onChange={e => handleNewStepChange(track.id, 'name', e.target.value)}
+                            style={{ marginRight: 8 }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Assignees (comma-separated IDs)"
+                            value={newStep[track.id.toString()]?.assignees || ''}
+                            onChange={e => handleNewStepChange(track.id, 'assignees', e.target.value)}
+                            style={{ marginRight: 8, width: 180 }}
+                          />
+                          <input
+                            type="date"
+                            value={newStep[track.id.toString()]?.due || ''}
+                            onChange={e => handleNewStepChange(track.id, 'due', e.target.value)}
+                            style={{ marginRight: 8 }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Notes"
+                            value={newStep[track.id.toString()]?.notes || ''}
+                            onChange={e => handleNewStepChange(track.id, 'notes', e.target.value)}
+                            style={{ marginRight: 8, width: 180 }}
+                          />
+                          <button onClick={() => handleAddStep(track.id)} disabled={addStepLoading[track.id.toString()] || !(newStep[track.id.toString()]?.name)}>
+                            {addStepLoading[track.id.toString()] ? 'Adding...' : 'Add Step'}
+                          </button>
+                          {addStepError[track.id.toString()] && <div style={{ color: 'red' }}>{addStepError[track.id.toString()]}</div>}
+                        </div>
+                        {workflowError[track.id.toString()] && <div style={{ color: 'red' }}>{workflowError[track.id.toString()]}</div>}
                       </div>
                     )}
                   </>

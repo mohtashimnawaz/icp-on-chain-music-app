@@ -255,4 +255,41 @@ export async function revertToVersion(trackId: bigint, version: number) {
 
 export async function compareVersions(trackId: bigint, versionA: number, versionB: number) {
   return await getMusicActor().compare_versions(trackId, versionA, versionB);
+}
+
+export async function getTrackWorkflowSteps(trackId: bigint) {
+  return await getMusicActor().get_track_workflow_steps(trackId);
+}
+
+export async function createWorkflowStep(trackId: bigint, stepName: string, assignedTo: bigint[], dueDate?: bigint, notes?: string) {
+  return await getMusicActor().create_workflow_step(
+    trackId,
+    stepName,
+    assignedTo,
+    dueDate ? [dueDate] : [],
+    notes ? [notes] : []
+  );
+}
+
+export async function updateWorkflowStepStatus(stepId: bigint, status: any, notes?: string) {
+  return await getMusicActor().update_workflow_step_status(
+    stepId,
+    status,
+    notes ? [notes] : []
+  );
+}
+
+export async function getWorkflowTemplates() {
+  return await getMusicActor().get_workflow_templates();
+}
+
+export async function createWorkflowTemplate(name: string, description: string, steps: string[], estimatedDurationDays: number, genreSpecific: boolean, targetGenre?: string) {
+  return await getMusicActor().create_workflow_template(
+    name,
+    description,
+    steps,
+    estimatedDurationDays,
+    genreSpecific,
+    targetGenre ? [targetGenre] : []
+  );
 } 
