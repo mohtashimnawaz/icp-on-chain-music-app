@@ -4,6 +4,7 @@ import { createActor, canisterId } from '../../../declarations/icp-music-platfor
 import { Principal } from '@dfinity/principal';
 import type { CollabRequest, Task, TaskStatus, CollaborationSession } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 import { icp_music_platform_backend } from '../../../declarations/icp-music-platform-backend';
+import type { Report, ReportStatus, ReportTargetType } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
@@ -156,4 +157,17 @@ export async function listMessagesWith(user: Principal): Promise<Array<{ id: big
 
 export async function markMessageRead(messageId: bigint): Promise<boolean> {
   return await icp_music_platform_backend.mark_message_read(messageId);
+}
+
+export async function reportContent(targetType: ReportTargetType, targetId: string, reason: string, details?: string): Promise<Report | null> {
+  const result = await icp_music_platform_backend.report_content(targetType, targetId, reason, details ? [details] : []);
+  return result[0] ?? null;
+}
+
+export async function listReports(): Promise<Report[]> {
+  return await icp_music_platform_backend.list_reports();
+}
+
+export async function reviewReport(reportId: bigint, status: ReportStatus, resolutionNotes?: string): Promise<boolean> {
+  return await icp_music_platform_backend.review_report(reportId, status, resolutionNotes ? [resolutionNotes] : []);
 } 
