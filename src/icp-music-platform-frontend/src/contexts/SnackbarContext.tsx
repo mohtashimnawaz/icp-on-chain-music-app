@@ -19,9 +19,9 @@ export const SnackbarProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState<AlertColor>('info');
 
-  const showMessage = (msg: string, sev: AlertColor = 'info') => {
+  const showMessage = (msg: string, sev?: AlertColor) => {
     setMessage(msg);
-    setSeverity(sev);
+    setSeverity(sev || 'info');
     setOpen(true);
   };
 
