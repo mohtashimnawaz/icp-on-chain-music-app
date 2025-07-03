@@ -230,4 +230,17 @@ export async function getRevenueInsights() {
 
 export async function getTrackPerformanceMetrics(trackId: bigint) {
   return await getMusicActor().get_track_performance_metrics(trackId);
+}
+
+export async function getTrackLicense(trackId: bigint) {
+  return await getMusicActor().get_track_license(trackId);
+}
+
+export async function setTrackLicense(trackId: bigint, licenseType: any, terms?: string, contractText?: string) {
+  return await getMusicActor().set_track_license(
+    trackId,
+    licenseType,
+    terms ? [terms] : [],
+    contractText ? [contractText] : []
+  );
 } 
