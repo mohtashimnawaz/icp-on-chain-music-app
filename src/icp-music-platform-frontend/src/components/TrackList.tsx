@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense, getTrackVersions, revertToVersion, compareVersions, getTrackWorkflowSteps, createWorkflowStep, updateWorkflowStepStatus, addTag, removeTag, setGenre, searchTracksByTag, searchTracksByGenre } from '../services/musicService';
+import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense, getTrackVersions, revertToVersion, compareVersions, getTrackWorkflowSteps, createWorkflowStep, updateWorkflowStepStatus, addTag, removeTag, setGenre, searchTracksByTag, searchTracksByGenre, followTrack, unfollowTrack, listFollowedTracks } from '../services/musicService';
 import ReportModal from './ReportModal';
 import type { ReportTargetType, LicenseType, TrackLicense, TrackVersion, VersionComparison, WorkflowStatus, WorkflowStep, WorkflowTemplate } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 
@@ -47,6 +47,7 @@ const TrackList: React.FC = () => {
   const [updateStepLoading, setUpdateStepLoading] = useState<{ [id: string]: boolean }>({});
   const [tagSearch, setTagSearch] = useState('');
   const [genreSearch, setGenreSearch] = useState('');
+  const [followed, setFollowed] = useState<Set<string>>(new Set());
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -61,8 +62,17 @@ const TrackList: React.FC = () => {
     }
   };
 
+  const fetchFollowed = async () => {
+    try {
+      const ids = await listFollowedTracks();
+      const arr = Array.isArray(ids) ? ids : Array.from(ids);
+      setFollowed(new Set(arr.map((id: bigint) => id.toString())));
+    } catch {}
+  };
+
   useEffect(() => {
     fetchTracks();
+    fetchFollowed();
   }, []);
 
   const handleRate = async (trackId: bigint) => {
@@ -399,6 +409,16 @@ const TrackList: React.FC = () => {
     }
   };
 
+  const handleFollow = async (trackId: bigint) => {
+    await followTrack(trackId);
+    fetchFollowed();
+  };
+
+  const handleUnfollow = async (trackId: bigint) => {
+    await unfollowTrack(trackId);
+    fetchFollowed();
+  };
+
   if (loading) return <div style={{ padding: '2rem' }}>Loading tracks...</div>;
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>{error}</div>;
 
@@ -690,6 +710,11 @@ const TrackList: React.FC = () => {
                         </div>
                         {workflowError[track.id.toString()] && <div style={{ color: 'red' }}>{workflowError[track.id.toString()]}</div>}
                       </div>
+                    )}
+                    {followed.has(track?.id?.toString?.() ?? '') ? (
+                      <button onClick={() => handleUnfollow(track.id)} disabled={!!actionLoading?.[track?.id?.toString?.() ?? '']}>Unfollow</button>
+                    ) : (
+                      <button onClick={() => handleFollow(track.id)} disabled={!!actionLoading?.[track?.id?.toString?.() ?? '']}>Follow</button>
                     )}
                   </>
                 )}
