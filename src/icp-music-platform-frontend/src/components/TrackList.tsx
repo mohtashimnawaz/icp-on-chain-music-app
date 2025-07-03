@@ -132,13 +132,14 @@ const TrackList: React.FC = () => {
     setActionLoading((prev) => ({ ...prev, [track.id.toString()]: true }));
     setActionError((prev) => ({ ...prev, [track.id.toString()]: null }));
     try {
-      const contributorsArr = editFields[track.id.toString()].contributors.split(',').map((id: string) => BigInt(id.trim())).filter(Boolean);
-      await updateTrack(track.id, editFields[track.id.toString()].title, editFields[track.id.toString()].description, contributorsArr, track.version);
-      if (editFields[track.id.toString()].genre) {
-        await setGenre(track.id, editFields[track.id.toString()].genre);
+      const ef = editFields[track.id.toString()] || {};
+      const contributorsArr = (ef.contributors || '').split(',').map((id: string) => BigInt(id.trim())).filter(Boolean);
+      await updateTrack(track.id, ef.title || '', ef.description || '', contributorsArr, track.version);
+      if (ef.genre) {
+        await setGenre(track.id, ef.genre || '');
       }
-      if (editFields[track.id.toString()].tags) {
-        const tags = editFields[track.id.toString()].tags.split(',').map(t => t.trim()).filter(Boolean).map(t => t as string);
+      if (ef.tags) {
+        const tags = (ef.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(t => t as string);
         await Promise.all(tags.map(t => addTag(track.id, t)));
       }
       setEditMode((prev) => ({ ...prev, [track.id.toString()]: false }));
@@ -245,8 +246,13 @@ const TrackList: React.FC = () => {
     setLicenseLoading(prev => ({ ...prev, [trackId.toString()]: true }));
     setLicenseError(prev => ({ ...prev, [trackId.toString()]: null }));
     try {
-      const fields = licenseFields[trackId.toString()];
-      await setTrackLicense(trackId, fields.type, fields.terms, fields.contract);
+      const fields = licenseFields[trackId.toString()] || {};
+      await setTrackLicense(
+        trackId,
+        fields.type ?? { AllRightsReserved: null },
+        fields.terms ?? '',
+        fields.contract ?? ''
+      );
       setLicenseEdit(prev => ({ ...prev, [trackId.toString()]: false }));
       fetchLicense(trackId);
     } catch {
@@ -418,32 +424,32 @@ const TrackList: React.FC = () => {
                   <div>
                     <input
                       type="text"
-                      value={editFields[track.id.toString()]?.title || ''}
-                      onChange={e => handleEditChange(track.id, 'title', e.target.value)}
+                      value={editFields[track.id.toString()]?.title ?? ''}
+                      onChange={e => handleEditChange(track.id, 'title', (e.target.value ?? '') + '')}
                       disabled={actionLoading[track.id.toString()]}
                       style={{ marginBottom: 4 }}
                     />
                     <br />
                     <input
                       type="text"
-                      value={editFields[track.id.toString()]?.description || ''}
-                      onChange={e => handleEditChange(track.id, 'description', e.target.value)}
+                      value={editFields[track.id.toString()]?.description ?? ''}
+                      onChange={e => handleEditChange(track.id, 'description', (e.target.value ?? '') + '')}
                       disabled={actionLoading[track.id.toString()]}
                       style={{ marginBottom: 4 }}
                     />
                     <br />
                     <input
                       type="text"
-                      value={editFields[track.id.toString()]?.contributors || ''}
-                      onChange={e => handleEditChange(track.id, 'contributors', e.target.value || '')}
+                      value={editFields[track.id.toString()]?.contributors ?? ''}
+                      onChange={e => handleEditChange(track.id, 'contributors', (e.target.value ?? '') + '')}
                       disabled={actionLoading[track.id.toString()]}
                       style={{ marginBottom: 4 }}
                     />
                     <br />
                     <input
                       type="text"
-                      value={(editFields[track.id.toString()] && typeof editFields[track.id.toString()].genre === 'string') ? editFields[track.id.toString()].genre : (typeof track.genre === 'string' ? track.genre : '')}
-                      onChange={e => handleEditChange(track.id, 'genre', e.target.value ?? '')}
+                      value={editFields[track.id.toString()]?.genre ?? track.genre ?? ''}
+                      onChange={e => handleEditChange(track.id, 'genre', (e.target.value ?? '') + '')}
                       disabled={actionLoading[track.id.toString()]}
                       style={{ marginBottom: 4 }}
                       placeholder="Genre"
@@ -451,8 +457,8 @@ const TrackList: React.FC = () => {
                     <br />
                     <input
                       type="text"
-                      value={(editFields[track.id.toString()] && typeof editFields[track.id.toString()].tags === 'string') ? editFields[track.id.toString()].tags : (Array.isArray(track.tags) ? track.tags.join(', ') : '')}
-                      onChange={e => handleEditChange(track.id, 'tags', e.target.value ?? '')}
+                      value={editFields[track.id.toString()]?.tags ?? (Array.isArray(track.tags) ? track.tags.join(', ') : '')}
+                      onChange={e => handleEditChange(track.id, 'tags', (e.target.value ?? '') + '')}
                       disabled={actionLoading[track.id.toString()]}
                       style={{ marginBottom: 4 }}
                       placeholder="Tags (comma-separated)"
@@ -534,11 +540,11 @@ const TrackList: React.FC = () => {
                             style={{ width: 200, marginRight: 8 }}
                           />
                           <br />
-                          {licenseFields[track.id.toString()] && (
+                          {licenseFields[track.id.toString()] !== undefined ? (
                             <input
                               type="text"
-                              value={typeof licenseFields[track.id.toString()].contract === 'string' ? licenseFields[track.id.toString()].contract : ''}
-                              onChange={e => handleLicenseFieldChange(track.id, 'contract', e.target.value ?? '')}
+                              value={licenseFields[track.id.toString()]?.contract ?? ''}
+                              onChange={e => handleLicenseFieldChange(track.id, 'contract', (e.target.value ?? '') + '')}
                               style={{ width: 200, marginRight: 8 }}
                             />
                           )}
