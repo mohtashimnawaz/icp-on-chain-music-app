@@ -222,4 +222,12 @@ export async function liftSuspension(id: bigint) {
 
 export async function listAuditLog() {
   return await getMusicActor().list_audit_log();
+}
+
+export async function getRevenueInsights() {
+  return await getMusicActor().get_revenue_insights();
+}
+
+export async function getTrackPerformanceMetrics(trackId: bigint) {
+  return await getMusicActor().get_track_performance_metrics(trackId);
 } 
