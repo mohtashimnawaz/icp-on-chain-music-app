@@ -2,6 +2,8 @@ import type { ActorSubclass } from '@dfinity/agent';
 import type { _SERVICE } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 import { createActor, canisterId } from '../../../declarations/icp-music-platform-backend';
 import { Principal } from '@dfinity/principal';
+import type { CollabRequest, Task, TaskStatus, CollaborationSession } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
+import { icp_music_platform_backend } from '../../../declarations/icp-music-platform-backend';
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
@@ -95,4 +97,50 @@ export async function searchTracksByContributor(artistId: bigint) {
 
 export async function listFollowedArtists() {
   return await getMusicActor().list_followed_artists();
+}
+
+export async function sendCollabRequest(from: bigint, to: bigint, trackId: bigint, message?: string): Promise<CollabRequest | null> {
+  const result = await icp_music_platform_backend.send_collab_request(from, to, trackId, message ? [message] : []);
+  return result[0] ?? null;
+}
+
+export async function respondCollabRequest(requestId: bigint, accept: boolean): Promise<CollabRequest | null> {
+  const result = await icp_music_platform_backend.respond_collab_request(requestId, accept);
+  return result[0] ?? null;
+}
+
+export async function listCollabRequestsForUser(userId: bigint): Promise<CollabRequest[]> {
+  return await icp_music_platform_backend.list_collab_requests_for_user(userId);
+}
+
+export async function createTask(trackId: bigint, assignedTo: bigint, description: string): Promise<Task | null> {
+  const result = await icp_music_platform_backend.create_task(trackId, assignedTo, description);
+  return result[0] ?? null;
+}
+
+export async function updateTaskStatus(taskId: bigint, status: TaskStatus): Promise<Task | null> {
+  const result = await icp_music_platform_backend.update_task_status(taskId, status);
+  return result[0] ?? null;
+}
+
+export async function listTasksForTrack(trackId: bigint): Promise<Task[]> {
+  return await icp_music_platform_backend.list_tasks_for_track(trackId);
+}
+
+export async function listTasksForUser(userId: bigint): Promise<Task[]> {
+  return await icp_music_platform_backend.list_tasks_for_user(userId);
+}
+
+export async function createCollaborationSession(trackId: bigint, sessionName: string, participants: bigint[], notes?: string): Promise<CollaborationSession | null> {
+  const result = await icp_music_platform_backend.create_collaboration_session(trackId, sessionName, participants, notes ? [notes] : []);
+  return result[0] ?? null;
+}
+
+export async function endCollaborationSession(sessionId: bigint, notes?: string): Promise<CollaborationSession | null> {
+  const result = await icp_music_platform_backend.end_collaboration_session(sessionId, notes ? [notes] : []);
+  return result[0] ?? null;
+}
+
+export async function getTrackCollaborationSessions(trackId: bigint): Promise<CollaborationSession[]> {
+  return await icp_music_platform_backend.get_track_collaboration_sessions(trackId);
 } 
