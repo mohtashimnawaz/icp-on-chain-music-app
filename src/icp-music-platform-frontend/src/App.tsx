@@ -8,6 +8,7 @@ import Collaboration from './components/Collaboration';
 import Analytics from './components/Analytics';
 import ArtistList from './components/ArtistList';
 import ArtistRegister from './components/ArtistRegister';
+import Messaging from './components/Messaging';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -31,7 +32,8 @@ const App: React.FC = () => {
         <Link to="/collaboration">Collaboration</Link> |{' '}
         <Link to="/analytics">Analytics</Link> |{' '}
         <Link to="/artists">Artists</Link> |{' '}
-        <Link to="/register-artist">Register Artist</Link>
+        <Link to="/register-artist">Register Artist</Link> |{' '}
+        <Link to="/messaging">Messaging</Link>
         <span style={{ float: 'right' }}>
           {isAuthenticated ? (
             <>
@@ -56,6 +58,7 @@ const App: React.FC = () => {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/artists" element={<ArtistList />} />
         <Route path="/register-artist" element={<ArtistRegister />} />
+        <Route path="/messaging" element={<Messaging />} />
       </Routes>
     </div>
   );
