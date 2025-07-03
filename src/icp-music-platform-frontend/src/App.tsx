@@ -11,6 +11,7 @@ import ArtistRegister from './components/ArtistRegister';
 import Messaging from './components/Messaging';
 import AdminReports from './components/AdminReports';
 import Playlists from './components/Playlists';
+import Notifications from './components/Notifications';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -31,6 +32,7 @@ const App: React.FC = () => {
         <Link to="/studio">Music Studio</Link> |{' '}
         <Link to="/tracks">Track List</Link> |{' '}
         <Link to="/playlists">Playlists</Link> |{' '}
+        <Link to="/notifications">Notifications</Link> |{' '}
         <Link to="/upload">Music Upload</Link> |{' '}
         <Link to="/collaboration">Collaboration</Link> |{' '}
         <Link to="/analytics">Analytics</Link> |{' '}
@@ -58,6 +60,7 @@ const App: React.FC = () => {
         <Route path="/studio" element={<MusicStudio />} />
         <Route path="/tracks" element={<TrackList />} />
         <Route path="/playlists" element={<Playlists />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/upload" element={<MusicUpload />} />
         <Route path="/collaboration" element={<Collaboration />} />
         <Route path="/analytics" element={<Analytics />} />
