@@ -300,4 +300,24 @@ export async function createWorkflowTemplate(name: string, description: string, 
 
 export async function getUserActivity(userId: bigint) {
   return await getMusicActor().get_user_activity(userId);
+}
+
+export async function addTag(trackId: bigint, tag: string) {
+  return await getMusicActor().add_tag(trackId, tag);
+}
+
+export async function removeTag(trackId: bigint, tag: string) {
+  return await getMusicActor().remove_tag(trackId, tag);
+}
+
+export async function setGenre(trackId: bigint, genre: string) {
+  return await getMusicActor().set_genre(trackId, genre);
+}
+
+export async function searchTracksByTag(tag: string) {
+  return await getMusicActor().search_tracks_by_tag(tag);
+}
+
+export async function searchTracksByGenre(genre: string) {
+  return await getMusicActor().search_tracks_by_genre(genre);
 } 

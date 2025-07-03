@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { createTrack, uploadTrackFile } from '../services/musicService';
+import { createTrack, uploadTrackFile, setGenre, addTag } from '../services/musicService';
 
 const MusicUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [contributors, setContributors] = useState(''); // comma-separated user IDs
+  const [tags, setTags] = useState(''); // comma-separated tags
+  const [genre, setGenre] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -35,10 +37,23 @@ const MusicUpload: React.FC = () => {
       const trackId = created[0].id;
       // 2. Upload the file for the new track
       await uploadTrackFile(trackId.toString(), selectedFile);
+      // 3. Set genre if provided
+      if (genre.trim()) {
+        await setGenre(trackId, genre.trim());
+      }
+      // 4. Add tags if provided
+      if (tags.trim()) {
+        const tagArr = tags.split(',').map(t => t.trim()).filter(Boolean);
+        for (const tag of tagArr) {
+          await addTag(trackId, tag);
+        }
+      }
       setMessage('Track and file uploaded successfully!');
       setTitle('');
       setDescription('');
       setContributors('');
+      setTags('');
+      setGenre('');
       setSelectedFile(null);
     } catch (e) {
       setMessage('Upload failed.');
@@ -53,6 +68,8 @@ const MusicUpload: React.FC = () => {
       <input type="text" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} style={{ marginBottom: 8, display: 'block' }} />
       <input type="text" placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} style={{ marginBottom: 8, display: 'block' }} />
       <input type="text" placeholder="Contributors (comma-separated user IDs)" value={contributors} onChange={e => setContributors(e.target.value)} style={{ marginBottom: 8, display: 'block' }} />
+      <input type="text" placeholder="Tags (comma-separated)" value={tags} onChange={e => setTags(e.target.value)} style={{ marginBottom: 8, display: 'block' }} />
+      <input type="text" placeholder="Genre" value={genre} onChange={e => setGenre(e.target.value)} style={{ marginBottom: 8, display: 'block' }} />
       <input type="file" accept="audio/*" onChange={handleFileChange} />
       <button onClick={handleUpload} disabled={!selectedFile || loading} style={{ marginLeft: 8 }}>
         {loading ? 'Uploading...' : 'Upload'}

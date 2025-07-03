@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense, getTrackVersions, revertToVersion, compareVersions, getTrackWorkflowSteps, createWorkflowStep, updateWorkflowStepStatus } from '../services/musicService';
+import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense, getTrackVersions, revertToVersion, compareVersions, getTrackWorkflowSteps, createWorkflowStep, updateWorkflowStepStatus, addTag, removeTag, setGenre, searchTracksByTag, searchTracksByGenre } from '../services/musicService';
 import ReportModal from './ReportModal';
 import type { ReportTargetType, LicenseType, TrackLicense, TrackVersion, VersionComparison, WorkflowStatus, WorkflowStep, WorkflowTemplate } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 
@@ -20,7 +20,7 @@ const TrackList: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<{ [id: string]: boolean }>({});
   const [actionError, setActionError] = useState<{ [id: string]: string | null }>({});
   const [editMode, setEditMode] = useState<{ [id: string]: boolean }>({});
-  const [editFields, setEditFields] = useState<{ [id: string]: { title: string; description: string; contributors: string } }>({});
+  const [editFields, setEditFields] = useState<{ [id: string]: { title: string; description: string; contributors: string; genre?: string; tags?: string } }>({});
   const [reportOpen, setReportOpen] = useState(false);
   const [reportTrackId, setReportTrackId] = useState<string | null>(null);
   const [reportError, setReportError] = useState('');
@@ -45,6 +45,8 @@ const TrackList: React.FC = () => {
   const [addStepLoading, setAddStepLoading] = useState<{ [id: string]: boolean }>({});
   const [addStepError, setAddStepError] = useState<{ [id: string]: string | null }>({});
   const [updateStepLoading, setUpdateStepLoading] = useState<{ [id: string]: boolean }>({});
+  const [tagSearch, setTagSearch] = useState('');
+  const [genreSearch, setGenreSearch] = useState('');
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -110,7 +112,9 @@ const TrackList: React.FC = () => {
     setEditFields((prev) => ({ ...prev, [track.id.toString()]: {
       title: track.title,
       description: track.description,
-      contributors: track.contributors?.join(', ') || ''
+      contributors: track.contributors?.join(', ') || '',
+      genre: typeof track.genre === 'string' ? track.genre : '',
+      tags: Array.isArray(track.tags) ? track.tags.join(', ') : ''
     }}));
   };
 
@@ -130,6 +134,13 @@ const TrackList: React.FC = () => {
     try {
       const contributorsArr = editFields[track.id.toString()].contributors.split(',').map((id: string) => BigInt(id.trim())).filter(Boolean);
       await updateTrack(track.id, editFields[track.id.toString()].title, editFields[track.id.toString()].description, contributorsArr, track.version);
+      if (editFields[track.id.toString()].genre) {
+        await setGenre(track.id, editFields[track.id.toString()].genre);
+      }
+      if (editFields[track.id.toString()].tags) {
+        const tags = editFields[track.id.toString()].tags.split(',').map(t => t.trim()).filter(Boolean).map(t => t as string);
+        await Promise.all(tags.map(t => addTag(track.id, t)));
+      }
       setEditMode((prev) => ({ ...prev, [track.id.toString()]: false }));
       await fetchTracks();
     } catch (e) {
@@ -348,12 +359,53 @@ const TrackList: React.FC = () => {
     }
   };
 
+  const handleTagSearch = async () => {
+    if (tagSearch.trim()) {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await searchTracksByTag(tagSearch.trim());
+        setTracks(data);
+      } catch (e) {
+        setError('Failed to search by tag.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      fetchTracks();
+    }
+  };
+
+  const handleGenreSearch = async () => {
+    if (genreSearch.trim()) {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await searchTracksByGenre(genreSearch.trim());
+        setTracks(data);
+      } catch (e) {
+        setError('Failed to search by genre.');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      fetchTracks();
+    }
+  };
+
   if (loading) return <div style={{ padding: '2rem' }}>Loading tracks...</div>;
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>{error}</div>;
 
   return (
     <div style={{ padding: '2rem' }}>
       <h2>Track List</h2>
+      <div style={{ marginBottom: 16 }}>
+        <input type="text" placeholder="Search by tag" value={tagSearch} onChange={e => setTagSearch(e.target.value)} style={{ marginRight: 8 }} />
+        <button onClick={handleTagSearch} style={{ marginRight: 16 }}>Search Tag</button>
+        <input type="text" placeholder="Search by genre" value={genreSearch} onChange={e => setGenreSearch(e.target.value)} style={{ marginRight: 8 }} />
+        <button onClick={handleGenreSearch}>Search Genre</button>
+        {(tagSearch || genreSearch) && <button onClick={() => { setTagSearch(''); setGenreSearch(''); fetchTracks(); }} style={{ marginLeft: 16 }}>Clear</button>}
+      </div>
       {tracks.length === 0 ? (
         <p>No tracks found.</p>
       ) : (
@@ -383,9 +435,27 @@ const TrackList: React.FC = () => {
                     <input
                       type="text"
                       value={editFields[track.id.toString()]?.contributors || ''}
-                      onChange={e => handleEditChange(track.id, 'contributors', e.target.value)}
+                      onChange={e => handleEditChange(track.id, 'contributors', e.target.value || '')}
                       disabled={actionLoading[track.id.toString()]}
                       style={{ marginBottom: 4 }}
+                    />
+                    <br />
+                    <input
+                      type="text"
+                      value={(editFields[track.id.toString()] && typeof editFields[track.id.toString()].genre === 'string') ? editFields[track.id.toString()].genre : (typeof track.genre === 'string' ? track.genre : '')}
+                      onChange={e => handleEditChange(track.id, 'genre', e.target.value ?? '')}
+                      disabled={actionLoading[track.id.toString()]}
+                      style={{ marginBottom: 4 }}
+                      placeholder="Genre"
+                    />
+                    <br />
+                    <input
+                      type="text"
+                      value={(editFields[track.id.toString()] && typeof editFields[track.id.toString()].tags === 'string') ? editFields[track.id.toString()].tags : (Array.isArray(track.tags) ? track.tags.join(', ') : '')}
+                      onChange={e => handleEditChange(track.id, 'tags', e.target.value ?? '')}
+                      disabled={actionLoading[track.id.toString()]}
+                      style={{ marginBottom: 4 }}
+                      placeholder="Tags (comma-separated)"
                     />
                     <br />
                     <button onClick={() => handleEditSave(track)} disabled={actionLoading[track.id.toString()]}>Save</button>
@@ -396,6 +466,8 @@ const TrackList: React.FC = () => {
                     <strong>{track.title}</strong> <br />
                     <span>{track.description}</span> <br />
                     <span>Contributors: {track.contributors?.join(', ')}</span> <br />
+                    <span>Genre: {track.genre ?? ''}</span> <br />
+                    <span>Tags: {Array.isArray(track.tags) ? track.tags.join(', ') : ''}</span> <br />
                     <span>Play count: {track.play_count ?? 0}</span> <br />
                     <span>Average rating: {track.ratings && track.ratings.length > 0 ? (track.ratings.reduce((acc: number, r: any) => acc + r[1], 0) / track.ratings.length).toFixed(2) : 'N/A'}</span>
                     <div style={{ marginTop: 8 }}>
@@ -462,13 +534,14 @@ const TrackList: React.FC = () => {
                             style={{ width: 200, marginRight: 8 }}
                           />
                           <br />
-                          <label>Contract: </label>
-                          <input
-                            type="text"
-                            value={licenseFields[track.id.toString()] && typeof licenseFields[track.id.toString()].contract === 'string' ? licenseFields[track.id.toString()].contract : ''}
-                            onChange={e => handleLicenseFieldChange(track.id, 'contract', e.target.value)}
-                            style={{ width: 200, marginRight: 8 }}
-                          />
+                          {licenseFields[track.id.toString()] && (
+                            <input
+                              type="text"
+                              value={typeof licenseFields[track.id.toString()].contract === 'string' ? licenseFields[track.id.toString()].contract : ''}
+                              onChange={e => handleLicenseFieldChange(track.id, 'contract', e.target.value ?? '')}
+                              style={{ width: 200, marginRight: 8 }}
+                            />
+                          )}
                           <br />
                           <button onClick={() => handleLicenseSave(track.id)} disabled={licenseLoading[track.id.toString()]}>Save</button>
                           <button onClick={() => handleLicenseCancel(track.id)} style={{ marginLeft: 8 }}>Cancel</button>
