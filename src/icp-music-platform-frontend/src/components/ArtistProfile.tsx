@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getArtist, updateArtist, followArtist, unfollowArtist, getUserEngagementMetrics, searchTracksByContributor, listFollowedArtists } from '../services/musicService';
+import { getArtist, updateArtist, followArtist, unfollowArtist, getUserEngagementMetrics, searchTracksByContributor, listFollowedArtists, reportContent } from '../services/musicService';
+import ReportModal from './ReportModal';
+import type { ReportTargetType } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 
 type LocalArtist = {
   id: bigint;
   name: string;
   bio: string;
   social: string;
-  profile_image_url: string;
-  links: string[];
+  profile_image_url?: string;
+  links?: string[];
   user_principal?: any;
 };
+
+const ARTIST_TARGET_TYPE: ReportTargetType = { Artist: null };
 
 const ArtistProfile: React.FC = () => {
   const { id } = useParams();
@@ -27,6 +31,8 @@ const ArtistProfile: React.FC = () => {
   const [followers, setFollowers] = useState<number>(0);
   const [following, setFollowing] = useState<number>(0);
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportError, setReportError] = useState('');
 
   useEffect(() => {
     const fetchArtist = async () => {
@@ -35,26 +41,28 @@ const ArtistProfile: React.FC = () => {
       try {
         const data = await getArtist(BigInt(id!));
         if (data && data[0]) {
-          const artistData = data[0];
+          const artistData = data[0] as any;
+          // Normalize all fields for LocalArtist
           const social = Array.isArray(artistData.social) && artistData.social.length > 0 ? artistData.social[0] : '';
-          const profileImageUrl = Array.isArray(artistData.profile_image_url) && artistData.profile_image_url.length > 0 ? artistData.profile_image_url[0] : '';
-          const linksArr = Array.isArray(artistData.links) && artistData.links.length > 0 && Array.isArray(artistData.links[0]) ? artistData.links[0] : [];
-          const links = linksArr.length > 0 ? linksArr.join(', ') : '';
-          setArtist({
+          const profileImageUrl = Array.isArray(artistData.profile_image_url) && artistData.profile_image_url.length > 0 ? artistData.profile_image_url[0] : undefined;
+          const linksArr = Array.isArray(artistData.links) && artistData.links.length > 0 && Array.isArray(artistData.links[0]) ? artistData.links[0] : undefined;
+          const userPrincipal = artistData.user_principal ? artistData.user_principal : undefined;
+          const normalizedArtist: LocalArtist = {
             id: artistData.id,
             name: artistData.name,
             bio: artistData.bio,
             social,
             profile_image_url: profileImageUrl,
             links: linksArr,
-            user_principal: artistData.user_principal
-          });
+            user_principal: userPrincipal
+          };
+          setArtist(normalizedArtist);
           setFields({
             name: artistData.name,
             bio: artistData.bio,
             social,
-            profileImageUrl,
-            links
+            profileImageUrl: profileImageUrl || '',
+            links: linksArr ? linksArr.join(', ') : ''
           });
         } else {
           setError('Artist not found.');
@@ -100,7 +108,23 @@ const ArtistProfile: React.FC = () => {
       setEditMode(false);
       // Refresh artist
       const data = await getArtist(BigInt(id!));
-      if (data && data[0]) setArtist(data[0]);
+      if (data && data[0]) {
+        const artistData = data[0] as any;
+        const social = Array.isArray(artistData.social) && artistData.social.length > 0 ? artistData.social[0] : '';
+        const profileImageUrl = Array.isArray(artistData.profile_image_url) && artistData.profile_image_url.length > 0 ? artistData.profile_image_url[0] : undefined;
+        const linksArr = Array.isArray(artistData.links) && artistData.links.length > 0 && Array.isArray(artistData.links[0]) ? artistData.links[0] : undefined;
+        const userPrincipal = artistData.user_principal ? artistData.user_principal : undefined;
+        const normalizedArtist: LocalArtist = {
+          id: artistData.id,
+          name: artistData.name,
+          bio: artistData.bio,
+          social,
+          profile_image_url: profileImageUrl,
+          links: linksArr,
+          user_principal: userPrincipal
+        };
+        setArtist(normalizedArtist);
+      }
     } catch (e) {
       setActionError('Failed to update profile.');
     } finally {
@@ -109,11 +133,12 @@ const ArtistProfile: React.FC = () => {
   };
 
   const handleFollow = async () => {
+    if (!artist) return;
     setActionLoading(true);
     setActionError(null);
     setMessage(null);
     try {
-      await followArtist(artist.user_principal.toString());
+      await followArtist(artist.user_principal ? artist.user_principal.toString() : '');
       setMessage('Followed!');
     } catch (e) {
       setActionError('Failed to follow.');
@@ -123,11 +148,12 @@ const ArtistProfile: React.FC = () => {
   };
 
   const handleUnfollow = async () => {
+    if (!artist) return;
     setActionLoading(true);
     setActionError(null);
     setMessage(null);
     try {
-      await unfollowArtist(artist.user_principal.toString());
+      await unfollowArtist(artist.user_principal ? artist.user_principal.toString() : '');
       setMessage('Unfollowed!');
     } catch (e) {
       setActionError('Failed to unfollow.');
@@ -136,9 +162,31 @@ const ArtistProfile: React.FC = () => {
     }
   };
 
+  const handleOpenReport = () => {
+    setReportOpen(true);
+    setReportError('');
+  };
+
+  const handleCloseReport = () => {
+    setReportOpen(false);
+    setReportError('');
+  };
+
+  const handleSubmitReport = async (reason: string, details: string) => {
+    if (!artist) return;
+    try {
+      await reportContent(ARTIST_TARGET_TYPE, artist.id.toString(), reason, details);
+      setReportOpen(false);
+    } catch {
+      setReportError('Failed to submit report.');
+    }
+  };
+
   if (loading) return <div style={{ padding: '2rem' }}>Loading artist...</div>;
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>{error}</div>;
   if (!artist) return null;
+  // Type guard: ensure artist is LocalArtist
+  const safeArtist = artist as LocalArtist;
 
   return (
     <div style={{ padding: '2rem' }}>
@@ -157,18 +205,19 @@ const ArtistProfile: React.FC = () => {
         </div>
       ) : (
         <div>
-          <strong>{artist.name || ''}</strong> <br />
-          <span>{artist.bio || ''}</span> <br />
-          {artist.social && <span>Social: {artist.social}</span>} <br />
-          {artist.profile_image_url && (
-            <span>Profile Image: <img src={artist.profile_image_url} alt="profile" style={{ width: 40, height: 40, borderRadius: '50%' }} /></span>
+          <strong>{safeArtist.name || ''}</strong> <br />
+          <span>{safeArtist.bio || ''}</span> <br />
+          {safeArtist.social && <span>Social: {safeArtist.social}</span>} <br />
+          {safeArtist.profile_image_url && (
+            <span>Profile Image: <img src={safeArtist.profile_image_url} alt="profile" style={{ width: 40, height: 40, borderRadius: '50%' }} /></span>
           )} <br />
-          {artist.links && artist.links.length > 0 && (
-            <span>Links: {artist.links.join(', ')}</span>
+          {safeArtist.links && Array.isArray(safeArtist.links) && safeArtist.links.length > 0 && (
+            <span>Links: {safeArtist.links.join(', ')}</span>
           )} <br />
           <button onClick={handleEdit} style={{ marginTop: 8, marginRight: 8 }}>Edit Profile</button>
           <button onClick={handleFollow} style={{ marginTop: 8, marginRight: 8 }}>Follow</button>
           <button onClick={handleUnfollow} style={{ marginTop: 8 }}>Unfollow</button>
+          <button onClick={handleOpenReport} style={{ marginTop: 16 }}>Report Artist</button>
           {actionError && <div style={{ color: 'red', marginTop: 8 }}>{actionError}</div>}
           {message && <div style={{ color: 'green', marginTop: 8 }}>{message}</div>}
           {analytics && (
@@ -191,6 +240,14 @@ const ArtistProfile: React.FC = () => {
               </ul>
             )}
           </div>
+          <ReportModal
+            open={reportOpen}
+            onClose={handleCloseReport}
+            onSubmit={handleSubmitReport}
+            targetType={ARTIST_TARGET_TYPE}
+            targetId={safeArtist.id ? safeArtist.id.toString() : ''}
+          />
+          {reportError && <div style={{ color: 'red' }}>{reportError}</div>}
         </div>
       )}
     </div>

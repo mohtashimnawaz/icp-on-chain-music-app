@@ -170,4 +170,28 @@ export async function listReports(): Promise<Report[]> {
 
 export async function reviewReport(reportId: bigint, status: ReportStatus, resolutionNotes?: string): Promise<boolean> {
   return await icp_music_platform_backend.review_report(reportId, status, resolutionNotes ? [resolutionNotes] : []);
+}
+
+export async function getPlatformAnalytics() {
+  return await getMusicActor().get_platform_analytics();
+}
+
+export async function listPlaylists() {
+  return await getMusicActor().list_playlists();
+}
+
+export async function createPlaylist(name: string, description: string, trackIds: bigint[]) {
+  return await getMusicActor().create_playlist(name, description ? [description] : [], trackIds);
+}
+
+export async function updatePlaylist(id: bigint, name: string, description: string, trackIds: bigint[]) {
+  return await getMusicActor().update_playlist(id, name, description ? [description] : [], trackIds);
+}
+
+export async function deletePlaylist(id: bigint) {
+  return await getMusicActor().delete_playlist(id);
+}
+
+export async function getPlaylist(id: bigint) {
+  return await getMusicActor().get_playlist(id);
 } 
