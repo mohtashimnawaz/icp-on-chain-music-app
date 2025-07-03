@@ -320,4 +320,16 @@ export async function searchTracksByTag(tag: string) {
 
 export async function searchTracksByGenre(genre: string) {
   return await getMusicActor().search_tracks_by_genre(genre);
+}
+
+export async function getRoyaltyBalance(artistId: bigint) {
+  return await getMusicActor().get_royalty_balance(artistId);
+}
+
+export async function withdrawRoyalties(artistId: bigint, amount: bigint) {
+  return await getMusicActor().withdraw_royalties(artistId, amount);
+}
+
+export async function getPaymentHistory(artistId: bigint) {
+  return await getMusicActor().get_payment_history(artistId);
 } 
