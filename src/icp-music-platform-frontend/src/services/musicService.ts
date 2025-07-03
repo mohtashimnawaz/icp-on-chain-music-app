@@ -202,4 +202,12 @@ export async function listNotifications() {
 
 export async function markNotificationRead(id: bigint) {
   return await getMusicActor().mark_notification_read(id);
+}
+
+export async function listModerationQueue() {
+  return await getMusicActor().list_moderation_queue();
+}
+
+export async function reviewModerationItem(id: bigint, status: any, notes?: string) {
+  return await getMusicActor().review_moderation_item(id, status, notes ? [notes] : []);
 } 
