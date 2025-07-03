@@ -6,6 +6,8 @@ import TrackList from './components/TrackList';
 import MusicUpload from './components/MusicUpload';
 import Collaboration from './components/Collaboration';
 import Analytics from './components/Analytics';
+import ArtistList from './components/ArtistList';
+import ArtistRegister from './components/ArtistRegister';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -27,7 +29,9 @@ const App: React.FC = () => {
         <Link to="/tracks">Track List</Link> |{' '}
         <Link to="/upload">Music Upload</Link> |{' '}
         <Link to="/collaboration">Collaboration</Link> |{' '}
-        <Link to="/analytics">Analytics</Link>
+        <Link to="/analytics">Analytics</Link> |{' '}
+        <Link to="/artists">Artists</Link> |{' '}
+        <Link to="/register-artist">Register Artist</Link>
         <span style={{ float: 'right' }}>
           {isAuthenticated ? (
             <>
@@ -50,6 +54,8 @@ const App: React.FC = () => {
         <Route path="/upload" element={<MusicUpload />} />
         <Route path="/collaboration" element={<Collaboration />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/artists" element={<ArtistList />} />
+        <Route path="/register-artist" element={<ArtistRegister />} />
       </Routes>
     </div>
   );

@@ -1,6 +1,7 @@
 import type { ActorSubclass } from '@dfinity/agent';
 import type { _SERVICE } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 import { createActor, canisterId } from '../../../declarations/icp-music-platform-backend';
+import { Principal } from '@dfinity/principal';
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
@@ -58,4 +59,28 @@ export async function updateTrack(id: bigint, title: string, description: string
 
 export async function getTrackFileDownload(trackId: bigint) {
   return await getMusicActor().get_track_file(trackId.toString());
+}
+
+export async function registerArtist(name: string, bio: string, social?: string, profileImageUrl?: string, links?: string[]): Promise<any> {
+  return await getMusicActor().register_artist(name, bio, social ? [social] : [], profileImageUrl ? [profileImageUrl] : [], links ? [links] : []);
+}
+
+export async function listArtists() {
+  return await getMusicActor().list_artists();
+}
+
+export async function getArtist(id: bigint) {
+  return await getMusicActor().get_artist(id);
+}
+
+export async function updateArtist(id: bigint, name: string, bio: string, social?: string, profileImageUrl?: string, links?: string[]): Promise<any> {
+  return await getMusicActor().update_artist(id, name, bio, social ? [social] : [], profileImageUrl ? [profileImageUrl] : [], links ? [links] : []);
+}
+
+export async function followArtist(principal: string) {
+  return await getMusicActor().follow_artist(Principal.fromText(principal));
+}
+
+export async function unfollowArtist(principal: string) {
+  return await getMusicActor().unfollow_artist(Principal.fromText(principal));
 } 
