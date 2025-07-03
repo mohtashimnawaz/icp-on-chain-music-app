@@ -14,7 +14,7 @@ const Home = () => (
 );
 
 const App: React.FC = () => {
-  const { isAuthenticated, principal, login, logout, isLoading } = useAuth();
+  const { isAuthenticated, principal, login, logout, isLoading, walletType } = useAuth();
   return (
     <div>
       <nav style={{ padding: '1rem', borderBottom: '1px solid #eee', marginBottom: '2rem' }}>
@@ -25,11 +25,14 @@ const App: React.FC = () => {
         <span style={{ float: 'right' }}>
           {isAuthenticated ? (
             <>
-              <span>Logged in as {principal}</span>
+              <span>Logged in as {principal} ({walletType})</span>
               <button onClick={logout} disabled={isLoading} style={{ marginLeft: 8 }}>Logout</button>
             </>
           ) : (
-            <button onClick={login} disabled={isLoading}>Connect Wallet</button>
+            <>
+              <button onClick={() => login('plug')} disabled={isLoading} style={{ marginRight: 8 }}>Connect with Plug</button>
+              <button onClick={() => login('internet-identity')} disabled={isLoading}>Connect with Internet Identity</button>
+            </>
           )}
         </span>
       </nav>
