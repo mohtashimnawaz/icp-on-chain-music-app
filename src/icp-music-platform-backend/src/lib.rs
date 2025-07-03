@@ -3,6 +3,8 @@ use candid::{CandidType, Deserialize};
 use std::cell::RefCell;
 use ic_cdk::api::caller;
 use candid::Principal;
+use ic_stable_structures::{StableBTreeMap, DefaultMemory, storable::BoundedStorable, storable::Storable};
+use std::borrow::Cow;
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct Artist {
@@ -362,7 +364,11 @@ thread_local! {
     static WORKFLOW_STEP_ID: RefCell<u64> = RefCell::new(1);
     static SESSION_ID: RefCell<u64> = RefCell::new(1);
     static TEMPLATE_ID: RefCell<u64> = RefCell::new(1);
+    static TRACK_FILES: RefCell<StableBTreeMap<u64, TrackFile, DefaultMemory>> = RefCell::new(StableBTreeMap::new(DefaultMemory::default()));
 }
+
+/// Max file size: 10MB
+const MAX_FILE_SIZE: usize = 10 * 1024 * 1024;
 
 #[ic_cdk::query]
 fn greet(name: String) -> String {
@@ -2611,4 +2617,68 @@ fn get_workflow_templates_by_genre(genre: String) -> Vec<WorkflowTemplate> {
             .cloned()
             .collect()
     })
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TrackFile {
+    pub track_id: u64,
+    pub filename: String,
+    pub content_type: String,
+    pub data: Vec<u8>,
+    pub uploaded_by: Principal,
+    pub uploaded_at: u64,
+}
+
+#[ic_cdk::update]
+pub fn upload_track_file(track_id: u64, filename: String, content_type: String, data: Vec<u8>) -> Result<(), String> {
+    let caller = ic_cdk::api::caller();
+    // Check file size
+    if data.len() > MAX_FILE_SIZE {
+        return Err("File too large (max 10MB)".to_string());
+    }
+    // Only owner or collaborator can upload
+    let track = get_track(track_id).ok_or("Track not found")?;
+    let user_id = get_user_id_by_principal(caller).ok_or("User not found")?;
+    let is_owner = track.contributors.get(0) == Some(&user_id);
+    let is_collab = track.contributors.contains(&user_id);
+    if !is_owner && !is_collab {
+        return Err("Not authorized to upload file for this track".to_string());
+    }
+    let now = ic_cdk::api::time() / 1_000_000;
+    let file = TrackFile {
+        track_id,
+        filename,
+        content_type,
+        data,
+        uploaded_by: caller,
+        uploaded_at: now,
+    };
+    TRACK_FILES.with(|files| files.borrow_mut().insert(track_id, file));
+    Ok(())
+}
+
+#[ic_cdk::query]
+pub fn get_track_file(track_id: u64) -> Option<TrackFile> {
+    TRACK_FILES.with(|files| files.borrow().get(&track_id).cloned())
+}
+
+// Helper to get user id by principal
+fn get_user_id_by_principal(principal: Principal) -> Option<u64> {
+    // This is a stub. Replace with your actual user lookup logic.
+    // For now, just return Some(1) for demo purposes.
+    Some(1)
+}
+
+impl Storable for TrackFile {
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(candid::encode_one(self).unwrap())
+    }
+    fn from_bytes(bytes: Cow<[u8]>) -> Self {
+        candid::decode_one(&bytes).unwrap()
+    }
+}
+
+impl BoundedStorable for TrackFile {
+    const MAX_SIZE: u32 = 10 * 1024 * 1024 + 1024; // 10MB + metadata buffer
+    const IS_FIXED_SIZE: bool = false;
 }
