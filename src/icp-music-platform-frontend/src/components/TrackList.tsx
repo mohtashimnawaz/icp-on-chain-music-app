@@ -540,7 +540,7 @@ const TrackList: React.FC = () => {
                             style={{ width: 200, marginRight: 8 }}
                           />
                           <br />
-                          {licenseFields[track.id.toString()] !== undefined ? (
+                          {licenseFields[track.id.toString()] !== undefined && (
                             <input
                               type="text"
                               value={licenseFields[track.id.toString()]?.contract ?? ''}
