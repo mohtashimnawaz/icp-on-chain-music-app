@@ -218,4 +218,8 @@ export async function listSuspensions() {
 
 export async function liftSuspension(id: bigint) {
   return await getMusicActor().lift_suspension(id, []);
+}
+
+export async function listAuditLog() {
+  return await getMusicActor().list_audit_log();
 } 

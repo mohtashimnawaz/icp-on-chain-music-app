@@ -17,6 +17,7 @@ import { listNotifications } from './services/musicService';
 import { useEffect, useState } from 'react';
 import ModerationQueue from './components/ModerationQueue';
 import Suspensions from './components/Suspensions';
+import AuditLog from './components/AuditLog';
 import './App.css';
 
 const Home = () => (
@@ -80,7 +81,8 @@ const App: React.FC = () => {
         <Link to="/messaging">Messaging</Link> |{' '}
         <Link to="/admin/reports">Admin Reports</Link> |{' '}
         <Link to="/moderation-queue">Moderation Queue</Link> |{' '}
-        <Link to="/suspensions">Suspensions</Link>
+        <Link to="/suspensions">Suspensions</Link> |{' '}
+        <Link to="/audit-log">Audit Log</Link>
         <span style={{ float: 'right' }}>
           {isAuthenticated ? (
             <>
@@ -111,6 +113,7 @@ const App: React.FC = () => {
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/moderation-queue" element={<ModerationQueue />} />
         <Route path="/suspensions" element={<Suspensions />} />
+        <Route path="/audit-log" element={<AuditLog />} />
       </Routes>
     </div>
   );
