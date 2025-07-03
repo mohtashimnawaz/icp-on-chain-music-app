@@ -210,4 +210,12 @@ export async function listModerationQueue() {
 
 export async function reviewModerationItem(id: bigint, status: any, notes?: string) {
   return await getMusicActor().review_moderation_item(id, status, notes ? [notes] : []);
+}
+
+export async function listSuspensions() {
+  return await getMusicActor().list_suspensions();
+}
+
+export async function liftSuspension(id: bigint) {
+  return await getMusicActor().lift_suspension(id, []);
 } 
