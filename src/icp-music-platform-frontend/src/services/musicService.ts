@@ -194,4 +194,12 @@ export async function deletePlaylist(id: bigint) {
 
 export async function getPlaylist(id: bigint) {
   return await getMusicActor().get_playlist(id);
+}
+
+export async function listNotifications() {
+  return await getMusicActor().list_notifications();
+}
+
+export async function markNotificationRead(id: bigint) {
+  return await getMusicActor().mark_notification_read(id);
 } 
