@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense } from '../services/musicService';
+import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFileDownload, reportContent, getTrackLicense, setTrackLicense, getTrackVersions, revertToVersion, compareVersions } from '../services/musicService';
 import ReportModal from './ReportModal';
-import type { ReportTargetType, LicenseType, TrackLicense } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
+import type { ReportTargetType, LicenseType, TrackLicense, TrackVersion, VersionComparison } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 
 const TRACK_TARGET_TYPE: ReportTargetType = { Track: null };
 
@@ -29,6 +29,14 @@ const TrackList: React.FC = () => {
   const [licenseEdit, setLicenseEdit] = useState<{ [id: string]: boolean }>({});
   const [licenseFields, setLicenseFields] = useState<{ [id: string]: { type: LicenseType; terms: string; contract: string } }>({});
   const [licenseError, setLicenseError] = useState<{ [id: string]: string | null }>({});
+  const [versionOpen, setVersionOpen] = useState<{ [id: string]: boolean }>({});
+  const [versions, setVersions] = useState<{ [id: string]: TrackVersion[] }>({});
+  const [versionLoading, setVersionLoading] = useState<{ [id: string]: boolean }>({});
+  const [compareA, setCompareA] = useState<{ [id: string]: string }>({});
+  const [compareB, setCompareB] = useState<{ [id: string]: string }>({});
+  const [comparison, setComparison] = useState<{ [id: string]: VersionComparison | null }>({});
+  const [revertLoading, setRevertLoading] = useState<{ [id: string]: boolean }>({});
+  const [versionError, setVersionError] = useState<{ [id: string]: string | null }>({});
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -229,6 +237,52 @@ const TrackList: React.FC = () => {
     }
   };
 
+  const handleToggleVersions = async (trackId: bigint) => {
+    setVersionOpen(prev => ({ ...prev, [trackId.toString()]: !prev[trackId.toString()] }));
+    if (!versions[trackId.toString()]) {
+      setVersionLoading(prev => ({ ...prev, [trackId.toString()]: true }));
+      try {
+        const v = await getTrackVersions(trackId);
+        setVersions(prev => ({ ...prev, [trackId.toString()]: v }));
+      } catch {
+        setVersionError(prev => ({ ...prev, [trackId.toString()]: 'Failed to load versions.' }));
+      } finally {
+        setVersionLoading(prev => ({ ...prev, [trackId.toString()]: false }));
+      }
+    }
+  };
+
+  const handleCompare = async (trackId: bigint) => {
+    const a = Number(compareA[trackId.toString()]);
+    const b = Number(compareB[trackId.toString()]);
+    if (!a || !b || a === b) return;
+    setVersionLoading(prev => ({ ...prev, [trackId.toString()]: true }));
+    try {
+      const cmp = await compareVersions(trackId, a, b);
+      setComparison(prev => ({ ...prev, [trackId.toString()]: cmp ?? null }));
+    } catch {
+      setVersionError(prev => ({ ...prev, [trackId.toString()]: 'Failed to compare versions.' }));
+    } finally {
+      setVersionLoading(prev => ({ ...prev, [trackId.toString()]: false }));
+    }
+  };
+
+  const handleRevert = async (trackId: bigint, version: number) => {
+    setRevertLoading(prev => ({ ...prev, [trackId.toString()]: true }));
+    try {
+      await revertToVersion(trackId, version);
+      setVersionError(prev => ({ ...prev, [trackId.toString()]: null }));
+      // Refresh versions and track list
+      const v = await getTrackVersions(trackId);
+      setVersions(prev => ({ ...prev, [trackId.toString()]: v }));
+      await fetchTracks();
+    } catch {
+      setVersionError(prev => ({ ...prev, [trackId.toString()]: 'Failed to revert version.' }));
+    } finally {
+      setRevertLoading(prev => ({ ...prev, [trackId.toString()]: false }));
+    }
+  };
+
   if (loading) return <div style={{ padding: '2rem' }}>Loading tracks...</div>;
   if (error) return <div style={{ padding: '2rem', color: 'red' }}>{error}</div>;
 
@@ -369,6 +423,63 @@ const TrackList: React.FC = () => {
                         </div>
                       )}
                     </div>
+                    <button onClick={() => handleToggleVersions(track.id)} style={{ marginTop: 8 }}>
+                      {versionOpen[track.id.toString()] ? 'Hide Versions' : 'Show Versions'}
+                    </button>
+                    {versionOpen[track.id.toString()] && (
+                      <div style={{ marginTop: 8, background: '#222', padding: 12, borderRadius: 6 }}>
+                        {versionLoading[track.id.toString()] ? (
+                          <span>Loading versions...</span>
+                        ) : versions[track.id.toString()] && versions[track.id.toString()].length > 0 ? (
+                          <>
+                            <strong>Version History:</strong>
+                            <ul>
+                              {versions[track.id.toString()].map((v, i) => (
+                                <li key={v.version} style={{ marginBottom: 4 }}>
+                                  <b>v{v.version}</b> - {v.title} ({new Date(Number(v.changed_at) * 1000).toLocaleString()})
+                                  {v.change_description && <span> - {v.change_description[0]}</span>}
+                                  <button onClick={() => handleRevert(track.id, v.version)} disabled={revertLoading[track.id.toString()]} style={{ marginLeft: 8 }}>
+                                    {revertLoading[track.id.toString()] ? 'Reverting...' : 'Revert to this version'}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                            <div style={{ marginTop: 8 }}>
+                              <strong>Compare Versions:</strong><br />
+                              <label>Version A: </label>
+                              <select value={compareA[track.id.toString()] || ''} onChange={e => setCompareA(prev => ({ ...prev, [track.id.toString()]: e.target.value }))}>
+                                <option value="">-- Select --</option>
+                                {versions[track.id.toString()].map(v => <option key={v.version} value={v.version}>{v.version}</option>)}
+                              </select>
+                              <label style={{ marginLeft: 8 }}>Version B: </label>
+                              <select value={compareB[track.id.toString()] || ''} onChange={e => setCompareB(prev => ({ ...prev, [track.id.toString()]: e.target.value }))}>
+                                <option value="">-- Select --</option>
+                                {versions[track.id.toString()].map(v => <option key={v.version} value={v.version}>{v.version}</option>)}
+                              </select>
+                              <button onClick={() => handleCompare(track.id)} style={{ marginLeft: 8 }}>Compare</button>
+                            </div>
+                            {track && track.id && comparison[track.id.toString()] && (
+                              <div style={{ marginTop: 8, background: '#333', padding: 8, borderRadius: 4 }}>
+                                <strong>Comparison Result:</strong><br />
+                                <span>Title changed: {comparison[track.id.toString()]?.title_changed ? 'Yes' : 'No'}</span><br />
+                                {comparison[track.id.toString()]?.title_diff?.[0] && (
+                                  <span>Title diff: {comparison[track.id.toString()]?.title_diff?.[0]}</span>
+                                )}<br />
+                                <span>Description changed: {comparison[track.id.toString()]?.description_changed ? 'Yes' : 'No'}</span><br />
+                                {comparison[track.id.toString()]?.description_diff?.[0] && (
+                                  <span>Description diff: {comparison[track.id.toString()]?.description_diff?.[0]}</span>
+                                )}<br />
+                                <span>Contributors changed: {comparison[track.id.toString()]?.contributors_changed ? 'Yes' : 'No'}</span><br />
+                                {comparison[track.id.toString()]?.contributors_diff?.[0] && (
+                                  <span>Contributors diff: {comparison[track.id.toString()]?.contributors_diff?.[0]}</span>
+                                )}<br />
+                              </div>
+                            )}
+                          </>
+                        ) : <span>No version history.</span>}
+                        {versionError[track.id.toString()] && <div style={{ color: 'red' }}>{versionError[track.id.toString()]}</div>}
+                      </div>
+                    )}
                   </>
                 )}
                 {actionError[track.id.toString()] && <div style={{ color: 'red', marginTop: 4 }}>{actionError[track.id.toString()]}</div>}
