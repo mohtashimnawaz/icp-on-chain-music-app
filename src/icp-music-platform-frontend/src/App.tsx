@@ -13,6 +13,8 @@ import AdminReports from './components/AdminReports';
 import Playlists from './components/Playlists';
 import Notifications from './components/Notifications';
 import { useAuth } from './contexts/AuthContext';
+import { listNotifications } from './services/musicService';
+import { useEffect, useState } from 'react';
 import './App.css';
 
 const Home = () => (
@@ -24,6 +26,26 @@ const Home = () => (
 
 const App: React.FC = () => {
   const { isAuthenticated, principal, login, logout, isLoading, walletType } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUnread = async () => {
+      try {
+        const data = await listNotifications();
+        if (mounted) {
+          setUnreadCount(Array.isArray(data) ? data.filter((n: any) => !n.read).length : 0);
+        }
+      } catch {
+        if (mounted) setUnreadCount(0);
+      }
+    };
+    fetchUnread();
+    // Optionally, poll every 30s
+    const interval = setInterval(fetchUnread, 30000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, []);
+
   return (
     <div>
       <nav style={{ padding: '1rem', borderBottom: '1px solid #eee', marginBottom: '2rem' }}>
@@ -32,7 +54,22 @@ const App: React.FC = () => {
         <Link to="/studio">Music Studio</Link> |{' '}
         <Link to="/tracks">Track List</Link> |{' '}
         <Link to="/playlists">Playlists</Link> |{' '}
-        <Link to="/notifications">Notifications</Link> |{' '}
+        <Link to="/notifications" style={{ position: 'relative' }}>
+          Notifications
+          {unreadCount > 0 && (
+            <span style={{
+              background: 'red',
+              color: 'white',
+              borderRadius: '50%',
+              padding: '2px 8px',
+              fontSize: 12,
+              position: 'absolute',
+              top: -8,
+              right: -18,
+              marginLeft: 4
+            }}>{unreadCount}</span>
+          )}
+        </Link> |{' '}
         <Link to="/upload">Music Upload</Link> |{' '}
         <Link to="/collaboration">Collaboration</Link> |{' '}
         <Link to="/analytics">Analytics</Link> |{' '}
