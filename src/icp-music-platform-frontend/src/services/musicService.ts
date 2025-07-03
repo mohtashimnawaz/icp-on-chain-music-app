@@ -243,4 +243,16 @@ export async function setTrackLicense(trackId: bigint, licenseType: any, terms?:
     terms ? [terms] : [],
     contractText ? [contractText] : []
   );
+}
+
+export async function getTrackVersions(trackId: bigint) {
+  return await getMusicActor().get_track_versions(trackId);
+}
+
+export async function revertToVersion(trackId: bigint, version: number) {
+  return await getMusicActor().revert_to_version(trackId, version);
+}
+
+export async function compareVersions(trackId: bigint, versionA: number, versionB: number) {
+  return await getMusicActor().compare_versions(trackId, versionA, versionB);
 } 
