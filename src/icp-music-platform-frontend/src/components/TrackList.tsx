@@ -239,142 +239,152 @@ const TrackList: React.FC = () => {
         <p>No tracks found.</p>
       ) : (
         <ul>
-          {tracks.map((track, idx) => (
-            <li key={idx} style={{ marginBottom: 24, borderBottom: '1px solid #444', paddingBottom: 16 }}>
-              {editMode[track.id.toString()] ? (
-                <div>
-                  <input
-                    type="text"
-                    value={editFields[track.id.toString()]?.title || ''}
-                    onChange={e => handleEditChange(track.id, 'title', e.target.value)}
-                    disabled={actionLoading[track.id.toString()]}
-                    style={{ marginBottom: 4 }}
-                  />
-                  <br />
-                  <input
-                    type="text"
-                    value={editFields[track.id.toString()]?.description || ''}
-                    onChange={e => handleEditChange(track.id, 'description', e.target.value)}
-                    disabled={actionLoading[track.id.toString()]}
-                    style={{ marginBottom: 4 }}
-                  />
-                  <br />
-                  <input
-                    type="text"
-                    value={editFields[track.id.toString()]?.contributors || ''}
-                    onChange={e => handleEditChange(track.id, 'contributors', e.target.value)}
-                    disabled={actionLoading[track.id.toString()]}
-                    style={{ marginBottom: 4 }}
-                  />
-                  <br />
-                  <button onClick={() => handleEditSave(track)} disabled={actionLoading[track.id.toString()]}>Save</button>
-                  <button onClick={() => handleEditCancel(track.id)} disabled={actionLoading[track.id.toString()]} style={{ marginLeft: 8 }}>Cancel</button>
-                </div>
-              ) : (
-                <>
-                  <strong>{track.title}</strong> <br />
-                  <span>{track.description}</span> <br />
-                  <span>Contributors: {track.contributors?.join(', ')}</span> <br />
-                  <span>Play count: {track.play_count ?? 0}</span> <br />
-                  <span>Average rating: {track.ratings && track.ratings.length > 0 ? (track.ratings.reduce((acc: number, r: any) => acc + r[1], 0) / track.ratings.length).toFixed(2) : 'N/A'}</span>
-                  <div style={{ marginTop: 8 }}>
-                    <label>Rate: </label>
-                    <select
-                      value={rating[track.id.toString()] || 1}
-                      onChange={e => setRating(prev => ({ ...prev, [track.id.toString()]: Number(e.target.value) }))}
-                      disabled={actionLoading[track.id.toString()]}
-                    >
-                      {[1, 2, 3, 4, 5].map(val => (
-                        <option key={val} value={val}>{val}</option>
-                      ))}
-                    </select>
-                    <button onClick={() => handleRate(track.id)} disabled={actionLoading[track.id.toString()]} style={{ marginLeft: 8 }}>
-                      {actionLoading[track.id.toString()] ? 'Rating...' : 'Rate'}
-                    </button>
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <label>Comment: </label>
+          {tracks.map((track, idx) => {
+            const licObj = license && license[track.id.toString()] ? license[track.id.toString()] : undefined;
+            return (
+              <li key={idx} style={{ marginBottom: 24, borderBottom: '1px solid #444', paddingBottom: 16 }}>
+                {editMode[track.id.toString()] ? (
+                  <div>
                     <input
                       type="text"
-                      value={comment[track.id.toString()] || ''}
-                      onChange={e => setComment(prev => ({ ...prev, [track.id.toString()]: e.target.value }))}
+                      value={editFields[track.id.toString()]?.title || ''}
+                      onChange={e => handleEditChange(track.id, 'title', e.target.value)}
                       disabled={actionLoading[track.id.toString()]}
-                      style={{ width: 200 }}
+                      style={{ marginBottom: 4 }}
                     />
-                    <button onClick={() => handleComment(track.id)} disabled={actionLoading[track.id.toString()] || !(comment[track.id.toString()] && comment[track.id.toString()].trim())} style={{ marginLeft: 8 }}>
-                      {actionLoading[track.id.toString()] ? 'Commenting...' : 'Add Comment'}
-                    </button>
+                    <br />
+                    <input
+                      type="text"
+                      value={editFields[track.id.toString()]?.description || ''}
+                      onChange={e => handleEditChange(track.id, 'description', e.target.value)}
+                      disabled={actionLoading[track.id.toString()]}
+                      style={{ marginBottom: 4 }}
+                    />
+                    <br />
+                    <input
+                      type="text"
+                      value={editFields[track.id.toString()]?.contributors || ''}
+                      onChange={e => handleEditChange(track.id, 'contributors', e.target.value)}
+                      disabled={actionLoading[track.id.toString()]}
+                      style={{ marginBottom: 4 }}
+                    />
+                    <br />
+                    <button onClick={() => handleEditSave(track)} disabled={actionLoading[track.id.toString()]}>Save</button>
+                    <button onClick={() => handleEditCancel(track.id)} disabled={actionLoading[track.id.toString()]} style={{ marginLeft: 8 }}>Cancel</button>
                   </div>
-                  <button onClick={() => handleEdit(track)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8, marginRight: 8 }}>Edit</button>
-                  <button onClick={() => handleDelete(track.id)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8, marginRight: 8, color: 'red' }}>Delete</button>
-                  <button onClick={() => handleDownload(track.id, track.title)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8 }}>Download</button>
-                  <button onClick={() => handleOpenReport(track.id.toString())} style={{ marginLeft: 8 }}>Report</button>
+                ) : (
+                  <>
+                    <strong>{track.title}</strong> <br />
+                    <span>{track.description}</span> <br />
+                    <span>Contributors: {track.contributors?.join(', ')}</span> <br />
+                    <span>Play count: {track.play_count ?? 0}</span> <br />
+                    <span>Average rating: {track.ratings && track.ratings.length > 0 ? (track.ratings.reduce((acc: number, r: any) => acc + r[1], 0) / track.ratings.length).toFixed(2) : 'N/A'}</span>
+                    <div style={{ marginTop: 8 }}>
+                      <label>Rate: </label>
+                      <select
+                        value={rating[track.id.toString()] || 1}
+                        onChange={e => setRating(prev => ({ ...prev, [track.id.toString()]: Number(e.target.value) }))}
+                        disabled={actionLoading[track.id.toString()]}
+                      >
+                        {[1, 2, 3, 4, 5].map(val => (
+                          <option key={val} value={val}>{val}</option>
+                        ))}
+                      </select>
+                      <button onClick={() => handleRate(track.id)} disabled={actionLoading[track.id.toString()]} style={{ marginLeft: 8 }}>
+                        {actionLoading[track.id.toString()] ? 'Rating...' : 'Rate'}
+                      </button>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <label>Comment: </label>
+                      <input
+                        type="text"
+                        value={comment[track.id.toString()] || ''}
+                        onChange={e => setComment(prev => ({ ...prev, [track.id.toString()]: e.target.value }))}
+                        disabled={actionLoading[track.id.toString()]}
+                        style={{ width: 200 }}
+                      />
+                      <button onClick={() => handleComment(track.id)} disabled={actionLoading[track.id.toString()] || !(comment[track.id.toString()] && comment[track.id.toString()].trim())} style={{ marginLeft: 8 }}>
+                        {actionLoading[track.id.toString()] ? 'Commenting...' : 'Add Comment'}
+                      </button>
+                    </div>
+                    <button onClick={() => handleEdit(track)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8, marginRight: 8 }}>Edit</button>
+                    <button onClick={() => handleDelete(track.id)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8, marginRight: 8, color: 'red' }}>Delete</button>
+                    <button onClick={() => handleDownload(track.id, track.title)} disabled={actionLoading[track.id.toString()]} style={{ marginTop: 8 }}>Download</button>
+                    <button onClick={() => handleOpenReport(track.id.toString())} style={{ marginLeft: 8 }}>Report</button>
+                    <div style={{ marginTop: 8 }}>
+                      <strong>License:</strong>
+                      {licenseLoading[track.id.toString()] ? (
+                        <span>Loading license...</span>
+                      ) : licenseEdit[track.id.toString()] ? (
+                        <div style={{ marginTop: 4 }}>
+                          <label>Type: </label>
+                          <select
+                            value={(() => {
+                              const lf = licenseFields[track.id.toString()];
+                              if (lf && lf.type) {
+                                const keys = Object.keys(lf.type);
+                                return keys.length > 0 ? keys[0] : 'AllRightsReserved';
+                              }
+                              return 'AllRightsReserved';
+                            })()}
+                            onChange={e => handleLicenseFieldChange(track.id, 'type', LICENSE_OPTIONS.find(opt => Object.keys(opt.value)[0] === e.target.value)?.value || { AllRightsReserved: null })}
+                            style={{ marginRight: 8 }}
+                          >
+                            {LICENSE_OPTIONS.map(opt => (
+                              <option key={Object.keys(opt.value)[0]} value={Object.keys(opt.value)[0]}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <br />
+                          <label>Terms: </label>
+                          <input
+                            type="text"
+                            value={licenseFields[track.id.toString()] && typeof licenseFields[track.id.toString()].terms === 'string' ? licenseFields[track.id.toString()].terms : ''}
+                            onChange={e => handleLicenseFieldChange(track.id, 'terms', e.target.value)}
+                            style={{ width: 200, marginRight: 8 }}
+                          />
+                          <br />
+                          <label>Contract: </label>
+                          <input
+                            type="text"
+                            value={licenseFields[track.id.toString()] && typeof licenseFields[track.id.toString()].contract === 'string' ? licenseFields[track.id.toString()].contract : ''}
+                            onChange={e => handleLicenseFieldChange(track.id, 'contract', e.target.value)}
+                            style={{ width: 200, marginRight: 8 }}
+                          />
+                          <br />
+                          <button onClick={() => handleLicenseSave(track.id)} disabled={licenseLoading[track.id.toString()]}>Save</button>
+                          <button onClick={() => handleLicenseCancel(track.id)} style={{ marginLeft: 8 }}>Cancel</button>
+                          {licenseError[track.id.toString()] && <div style={{ color: 'red' }}>{licenseError[track.id.toString()]}</div>}
+                        </div>
+                      ) : licObj ? (
+                        <div style={{ marginTop: 4 }}>
+                          <span>Type: {(licObj.license_type && typeof licObj.license_type === 'object') ? Object.keys(licObj.license_type as object)[0] : ''}</span><br />
+                          <span>Terms: {(Array.isArray(licObj.terms) && licObj.terms.length > 0) ? licObj.terms[0] : ''}</span><br />
+                          <span>Contract: {(Array.isArray(licObj.contract_text) && licObj.contract_text.length > 0) ? licObj.contract_text[0] : ''}</span><br />
+                          <button onClick={() => handleLicenseEdit(track.id)} style={{ marginTop: 4 }}>Edit License</button>
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: 4 }}>
+                          <span>No license set.</span>
+                          <button onClick={() => handleLicenseEdit(track.id)} style={{ marginLeft: 8 }}>Set License</button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                {actionError[track.id.toString()] && <div style={{ color: 'red', marginTop: 4 }}>{actionError[track.id.toString()]}</div>}
+                {track.comments && track.comments.length > 0 && (
                   <div style={{ marginTop: 8 }}>
-                    <strong>License:</strong>
-                    {licenseLoading[track.id.toString()] ? (
-                      <span>Loading license...</span>
-                    ) : licenseEdit[track.id.toString()] ? (
-                      <div style={{ marginTop: 4 }}>
-                        <label>Type: </label>
-                        <select
-                          value={licenseFields[track.id.toString()] && licenseFields[track.id.toString()].type ? Object.keys(licenseFields[track.id.toString()].type)[0] : 'AllRightsReserved'}
-                          onChange={e => handleLicenseFieldChange(track.id, 'type', LICENSE_OPTIONS.find(opt => Object.keys(opt.value)[0] === e.target.value)?.value || { AllRightsReserved: null })}
-                          style={{ marginRight: 8 }}
-                        >
-                          {LICENSE_OPTIONS.map(opt => (
-                            <option key={Object.keys(opt.value)[0]} value={Object.keys(opt.value)[0]}>{opt.label}</option>
-                          ))}
-                        </select>
-                        <br />
-                        <label>Terms: </label>
-                        <input
-                          type="text"
-                          value={licenseFields[track.id.toString()]?.terms ?? ''}
-                          onChange={e => handleLicenseFieldChange(track.id, 'terms', e.target.value)}
-                          style={{ width: 200, marginRight: 8 }}
-                        />
-                        <br />
-                        <label>Contract: </label>
-                        <input
-                          type="text"
-                          value={licenseFields[track.id.toString()]?.contract ?? ''}
-                          onChange={e => handleLicenseFieldChange(track.id, 'contract', e.target.value)}
-                          style={{ width: 200, marginRight: 8 }}
-                        />
-                        <br />
-                        <button onClick={() => handleLicenseSave(track.id)} disabled={licenseLoading[track.id.toString()]}>Save</button>
-                        <button onClick={() => handleLicenseCancel(track.id)} style={{ marginLeft: 8 }}>Cancel</button>
-                        {licenseError[track.id.toString()] && <div style={{ color: 'red' }}>{licenseError[track.id.toString()]}</div>}
-                      </div>
-                    ) : license[track.id.toString()] ? (
-                      <div style={{ marginTop: 4 }}>
-                        <span>Type: {license[track.id.toString()] && license[track.id.toString()]?.license_type ? Object.keys(license[track.id.toString()]?.license_type)[0] : ''}</span><br />
-                        <span>Terms: {license[track.id.toString()]?.terms && license[track.id.toString()]?.terms[0]}</span><br />
-                        <span>Contract: {license[track.id.toString()]?.contract_text && license[track.id.toString()]?.contract_text[0]}</span><br />
-                        <button onClick={() => handleLicenseEdit(track.id)} style={{ marginTop: 4 }}>Edit License</button>
-                      </div>
-                    ) : (
-                      <div style={{ marginTop: 4 }}>
-                        <span>No license set.</span>
-                        <button onClick={() => handleLicenseEdit(track.id)} style={{ marginLeft: 8 }}>Set License</button>
-                      </div>
-                    )}
+                    <strong>Comments:</strong>
+                    <ul>
+                      {track.comments.map((c: any, i: number) => (
+                        <li key={i}>{c.text} (by {c.commenter})</li>
+                      ))}
+                    </ul>
                   </div>
-                </>
-              )}
-              {actionError[track.id.toString()] && <div style={{ color: 'red', marginTop: 4 }}>{actionError[track.id.toString()]}</div>}
-              {track.comments && track.comments.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <strong>Comments:</strong>
-                  <ul>
-                    {track.comments.map((c: any, i: number) => (
-                      <li key={i}>{c.text} (by {c.commenter})</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </li>
-          ))}
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
       <ReportModal
