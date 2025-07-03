@@ -41,7 +41,7 @@ const AuditLog: React.FC = () => {
           {logs.map(l => (
             <tr key={l.id.toString()} style={{ borderBottom: '1px solid #eee' }}>
               <td>{l.id.toString()}</td>
-              <td>{l.admin?.toString()}</td>
+              <td>{l.admin ? l.admin.toString() : ''}</td>
               <td>{l.action}</td>
               <td>{l.target_type}</td>
               <td>{l.target_id}</td>

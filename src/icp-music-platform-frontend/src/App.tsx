@@ -86,7 +86,7 @@ const App: React.FC = () => {
         <span style={{ float: 'right' }}>
           {isAuthenticated ? (
             <>
-              <span>Logged in as {principal} ({walletType})</span>
+              <span>Logged in as {principal ? principal.toString() : ''} ({walletType})</span>
               <button onClick={logout} disabled={isLoading} style={{ marginLeft: 8 }}>Logout</button>
             </>
           ) : (

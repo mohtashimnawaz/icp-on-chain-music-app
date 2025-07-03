@@ -62,7 +62,7 @@ const Suspensions: React.FC = () => {
               <td>{s.target_id}</td>
               <td>{s.reason}</td>
               <td>{Object.keys(s.status)[0]}</td>
-              <td>{s.imposed_by?.toString()}</td>
+              <td>{s.imposed_by ? s.imposed_by.toString() : ''}</td>
               <td>{new Date(Number(s.imposed_at) * 1000).toLocaleString()}</td>
               <td>{s.duration_secs && s.duration_secs[0]}</td>
               <td>{s.notes && s.notes[0]}</td>
