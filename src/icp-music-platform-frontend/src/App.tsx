@@ -15,6 +15,7 @@ import Notifications from './components/Notifications';
 import { useAuth } from './contexts/AuthContext';
 import { listNotifications } from './services/musicService';
 import { useEffect, useState } from 'react';
+import ModerationQueue from './components/ModerationQueue';
 import './App.css';
 
 const Home = () => (
@@ -76,7 +77,8 @@ const App: React.FC = () => {
         <Link to="/artists">Artists</Link> |{' '}
         <Link to="/register-artist">Register Artist</Link> |{' '}
         <Link to="/messaging">Messaging</Link> |{' '}
-        <Link to="/admin/reports">Admin Reports</Link>
+        <Link to="/admin/reports">Admin Reports</Link> |{' '}
+        <Link to="/moderation-queue">Moderation Queue</Link>
         <span style={{ float: 'right' }}>
           {isAuthenticated ? (
             <>
@@ -105,6 +107,7 @@ const App: React.FC = () => {
         <Route path="/register-artist" element={<ArtistRegister />} />
         <Route path="/messaging" element={<Messaging />} />
         <Route path="/admin/reports" element={<AdminReports />} />
+        <Route path="/moderation-queue" element={<ModerationQueue />} />
       </Routes>
     </div>
   );
