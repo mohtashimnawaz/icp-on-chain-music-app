@@ -143,4 +143,17 @@ export async function endCollaborationSession(sessionId: bigint, notes?: string)
 
 export async function getTrackCollaborationSessions(trackId: bigint): Promise<CollaborationSession[]> {
   return await icp_music_platform_backend.get_track_collaboration_sessions(trackId);
+}
+
+export async function sendMessage(to: Principal, content: string): Promise<{ id: bigint, to: Principal, content: string, from: Principal, read: boolean, timestamp: bigint } | null> {
+  const result = await icp_music_platform_backend.send_message(to, content);
+  return result[0] ?? null;
+}
+
+export async function listMessagesWith(user: Principal): Promise<Array<{ id: bigint, to: Principal, content: string, from: Principal, read: boolean, timestamp: bigint }>> {
+  return await icp_music_platform_backend.list_messages_with(user);
+}
+
+export async function markMessageRead(messageId: bigint): Promise<boolean> {
+  return await icp_music_platform_backend.mark_message_read(messageId);
 } 
