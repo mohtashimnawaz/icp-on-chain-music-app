@@ -387,4 +387,6 @@ service : {
     create_workflow_template: (text, text, vec text, nat32, bool, opt text) -> (opt WorkflowTemplate);
     get_workflow_templates: () -> (vec WorkflowTemplate) query;
     get_workflow_templates_by_genre: (text) -> (vec WorkflowTemplate) query;
+    upload_track_file: (track_id: text, file_bytes: blob) -> (success: bool);
+    get_track_file: (track_id: text) -> (file_bytes: opt blob) query;
 }

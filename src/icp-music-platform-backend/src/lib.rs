@@ -3,7 +3,7 @@ use candid::{CandidType, Deserialize};
 use std::cell::RefCell;
 use ic_cdk::api::caller;
 use candid::Principal;
-use ic_stable_structures::{StableBTreeMap, DefaultMemory, storable::BoundedStorable, storable::Storable};
+use ic_stable_structures::{StableBTreeMap, DefaultMemoryImpl, storable::BoundedStorable, storable::Storable};
 use std::borrow::Cow;
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -364,7 +364,7 @@ thread_local! {
     static WORKFLOW_STEP_ID: RefCell<u64> = RefCell::new(1);
     static SESSION_ID: RefCell<u64> = RefCell::new(1);
     static TEMPLATE_ID: RefCell<u64> = RefCell::new(1);
-    static TRACK_FILES: RefCell<StableBTreeMap<u64, TrackFile, DefaultMemory>> = RefCell::new(StableBTreeMap::new(DefaultMemory::default()));
+    static TRACK_FILES: RefCell<StableBTreeMap<u64, TrackFile, DefaultMemoryImpl>> = RefCell::new(StableBTreeMap::new(DefaultMemoryImpl::default()));
 }
 
 /// Max file size: 10MB
@@ -2659,7 +2659,7 @@ pub fn upload_track_file(track_id: u64, filename: String, content_type: String, 
 
 #[ic_cdk::query]
 pub fn get_track_file(track_id: u64) -> Option<TrackFile> {
-    TRACK_FILES.with(|files| files.borrow().get(&track_id).cloned())
+    TRACK_FILES.with(|files| files.borrow().get(&track_id).map(|f| f.clone()))
 }
 
 // Helper to get user id by principal
