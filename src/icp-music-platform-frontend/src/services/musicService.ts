@@ -254,7 +254,11 @@ export async function revertToVersion(trackId: bigint, version: number) {
 }
 
 export async function compareVersions(trackId: bigint, versionA: number, versionB: number) {
-  return await getMusicActor().compare_versions(trackId, versionA, versionB);
+  const result = await getMusicActor().compare_versions(trackId, versionA, versionB);
+  if (Array.isArray(result)) {
+    return result.length > 0 ? result[0] : null;
+  }
+  return result ?? null;
 }
 
 export async function getTrackWorkflowSteps(trackId: bigint) {
