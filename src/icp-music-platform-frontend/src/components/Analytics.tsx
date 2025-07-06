@@ -9,7 +9,6 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
@@ -20,12 +19,110 @@ import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import LinearProgress from '@mui/material/LinearProgress';
+import Chip from '@mui/material/Chip';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PeopleIcon from '@mui/icons-material/People';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import StarIcon from '@mui/icons-material/Star';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import PieChartIcon from '@mui/icons-material/PieChart';
+
+// Simple Bar Chart Component
+const SimpleBarChart: React.FC<{ data: Array<[string, number]>, title: string, color?: string }> = ({ data, title, color = '#1976d2' }) => {
+  if (!data || data.length === 0) return null;
+  
+  const maxValue = Math.max(...data.map(item => item[1]));
+  
+  return (
+    <Paper sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+        <BarChartIcon sx={{ mr: 1 }} />
+        {title}
+      </Typography>
+      <Box sx={{ mt: 2 }}>
+        {data.map((item, index) => (
+          <Box key={index} sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="body2">{item[0]}</Typography>
+              <Typography variant="body2" fontWeight="bold">{item[1]}</Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={(item[1] / maxValue) * 100}
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: 'grey.200',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: color,
+                  borderRadius: 4,
+                }
+              }}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Paper>
+  );
+};
+
+// Progress Ring Component
+const ProgressRing: React.FC<{ value: number, maxValue: number, label: string, color?: string }> = ({ value, maxValue, label, color = '#1976d2' }) => {
+  const percentage = Math.min((value / maxValue) * 100, 100);
+  const size = 80;
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  
+  return (
+    <Box sx={{ textAlign: 'center' }}>
+      <Box sx={{ position: 'relative', display: 'inline-block' }}>
+        <svg width={size} height={size}>
+          {/* Background circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#e0e0e0"
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          {/* Progress circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        </svg>
+        <Box sx={{ 
+          position: 'absolute', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          textAlign: 'center'
+        }}>
+          <Typography variant="h6" fontWeight="bold">{Math.round(percentage)}%</Typography>
+        </Box>
+      </Box>
+      <Typography variant="body2" sx={{ mt: 1 }}>{label}</Typography>
+      <Typography variant="caption" color="text.secondary">
+        {value} / {maxValue}
+      </Typography>
+    </Box>
+  );
+};
 
 const Analytics: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
@@ -101,7 +198,8 @@ const Analytics: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+        <TrendingUpIcon sx={{ mr: 2, color: 'primary.main' }} />
         Platform Analytics
       </Typography>
 
@@ -148,7 +246,62 @@ const Analytics: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Detailed Stats */}
+      {/* Progress Rings for Key Metrics */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+        <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <ProgressRing
+                value={stats.avg_track_rating || 0}
+                maxValue={5}
+                label="Avg Rating"
+                color="#ff9800"
+              />
+            </CardContent>
+          </Card>
+        </Box>
+        
+        <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <ProgressRing
+                value={stats.total_artists || 0}
+                maxValue={Math.max(stats.total_artists || 0, 100)}
+                label="Active Artists"
+                color="#4caf50"
+              />
+            </CardContent>
+          </Card>
+        </Box>
+        
+        <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <ProgressRing
+                value={stats.total_plays || 0}
+                maxValue={Math.max(stats.total_plays || 0, 1000)}
+                label="Total Plays"
+                color="#2196f3"
+              />
+            </CardContent>
+          </Card>
+        </Box>
+        
+        <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <ProgressRing
+                value={stats.total_revenue || 0}
+                maxValue={Math.max(stats.total_revenue || 0, 1000)}
+                label="Total Revenue"
+                color="#9c27b0"
+              />
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
+
+      {/* Detailed Stats with Charts */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 4 }}>
         <Box sx={{ flex: { xs: '1', md: '0 0 50%' } }}>
           <Paper sx={{ p: 3 }}>
@@ -175,78 +328,37 @@ const Analytics: React.FC = () => {
         </Box>
 
         <Box sx={{ flex: { xs: '1', md: '0 0 50%' } }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Top Genres
-            </Typography>
-            {stats.most_popular_genres && stats.most_popular_genres.length > 0 ? (
-              <List>
-                {stats.most_popular_genres.map((genre: any, i: number) => (
-                  <ListItem key={i}>
-                    <ListItemText 
-                      primary={genre[0]} 
-                      secondary={`${genre[1]} tracks`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <Alert severity="info">No genre data available.</Alert>
-            )}
-          </Paper>
+          <SimpleBarChart
+            data={stats.most_popular_genres || []}
+            title="Top Genres"
+            color="#4caf50"
+          />
         </Box>
       </Box>
 
-      {/* Revenue Insights */}
+      {/* Revenue Insights with Charts */}
       {revenue && (
         <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+            <MonetizationOnIcon sx={{ mr: 1 }} />
             Revenue Insights
           </Typography>
           
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
             <Box sx={{ flex: { xs: '1', md: '0 0 50%' } }}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Top Earning Tracks
-                </Typography>
-                {revenue.top_earning_tracks && revenue.top_earning_tracks.length > 0 ? (
-                  <List>
-                    {revenue.top_earning_tracks.map((track: any, i: number) => (
-                      <ListItem key={i}>
-                        <ListItemText 
-                          primary={`Track ${track[0]}`} 
-                          secondary={`Revenue: ${track[1]}`}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <Alert severity="info">No track revenue data.</Alert>
-                )}
-              </Paper>
+              <SimpleBarChart
+                data={revenue.top_earning_tracks || []}
+                title="Top Earning Tracks"
+                color="#ff9800"
+              />
             </Box>
 
             <Box sx={{ flex: { xs: '1', md: '0 0 50%' } }}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Top Earning Artists
-                </Typography>
-                {revenue.top_earning_artists && revenue.top_earning_artists.length > 0 ? (
-                  <List>
-                    {revenue.top_earning_artists.map((artist: any, i: number) => (
-                      <ListItem key={i}>
-                        <ListItemText 
-                          primary={`Artist ${artist[0]}`} 
-                          secondary={`Revenue: ${artist[1]}`}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <Alert severity="info">No artist revenue data.</Alert>
-                )}
-              </Paper>
+              <SimpleBarChart
+                data={revenue.top_earning_artists || []}
+                title="Top Earning Artists"
+                color="#9c27b0"
+              />
             </Box>
           </Box>
         </Box>
@@ -254,7 +366,8 @@ const Analytics: React.FC = () => {
 
       {/* Track Performance Metrics */}
       <Box sx={{ mt: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+        <Typography variant="h5" gutterBottom sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+          <PlayArrowIcon sx={{ mr: 1 }} />
           Track Performance Metrics
         </Typography>
         
