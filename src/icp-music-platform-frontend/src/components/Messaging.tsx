@@ -1,6 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Principal } from '@dfinity/principal';
 import { sendMessage, listMessagesWith, markMessageRead } from '../services/musicService';
+import { useSnackbar } from '../contexts/SnackbarContext';
+import { useLoading } from '../contexts/LoadingContext';
+
+// MUI imports
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import Avatar from '@mui/material/Avatar';
+import Paper from '@mui/material/Paper';
+import Divider from '@mui/material/Divider';
+import Badge from '@mui/material/Badge';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import SendIcon from '@mui/icons-material/Send';
+import ChatIcon from '@mui/icons-material/Chat';
+import PersonIcon from '@mui/icons-material/Person';
+import DoneIcon from '@mui/icons-material/Done';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import MessageIcon from '@mui/icons-material/Message';
 
 // Mock current user principal (replace with real auth context in production)
 const MOCK_CURRENT_PRINCIPAL = Principal.fromText('aaaaa-aa');
@@ -23,7 +52,21 @@ const Messaging: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
+  const [newRecipient, setNewRecipient] = useState('');
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { showMessage } = useSnackbar();
+  const { withLoading } = useLoading();
+
+  // Auto-scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // Poll for new messages every 10 seconds
   useEffect(() => {
@@ -33,7 +76,9 @@ const Messaging: React.FC = () => {
           const msgs = await listMessagesWith(Principal.fromText(recipient));
           setMessages(msgs);
           setAllMessages(prev => ({ ...prev, [recipient]: msgs }));
-        } catch {}
+        } catch (error) {
+          console.error('Polling error:', error);
+        }
       }
     };
     poll();
@@ -44,19 +89,27 @@ const Messaging: React.FC = () => {
   // Load messages with recipient (on recipient change)
   useEffect(() => {
     if (recipient) {
-      setLoading(true);
-      setError('');
-      listMessagesWith(Principal.fromText(recipient))
-        .then(msgs => {
-          setMessages(msgs);
-          setAllMessages(prev => ({ ...prev, [recipient]: msgs }));
-        })
-        .catch(() => setError('Failed to load messages.'))
-        .finally(() => setLoading(false));
+      const loadMessages = async () => {
+        const loadPromise = (async () => {
+          setError('');
+          try {
+            const msgs = await listMessagesWith(Principal.fromText(recipient));
+            setMessages(msgs);
+            setAllMessages(prev => ({ ...prev, [recipient]: msgs }));
+          } catch (error) {
+            setError('Failed to load messages.');
+            showMessage('Failed to load messages', 'error');
+          }
+        })();
+        
+        await withLoading(loadPromise, 'Loading messages...');
+      };
+      
+      loadMessages();
     } else {
       setMessages([]);
     }
-  }, [recipient]);
+  }, [recipient, withLoading, showMessage]);
 
   // Aggregate all conversation partners
   const allPartners = Object.keys(allMessages);
@@ -72,130 +125,359 @@ const Messaging: React.FC = () => {
 
   // Send a message
   const handleSend = async () => {
-    setSending(true);
-    setError('');
-    try {
-      const to = Principal.fromText(recipient);
-      const sent = await sendMessage(to, messageInput);
-      if (sent) {
-        setMessages((prev) => [...prev, sent]);
-        setAllMessages(prev => ({ ...prev, [recipient]: [...(prev[recipient] || []), sent] }));
-        setMessageInput('');
-      } else {
-        setError('Failed to send message.');
-      }
-    } catch {
-      setError('Failed to send message.');
+    if (!messageInput.trim()) {
+      showMessage('Please enter a message', 'error');
+      return;
     }
-    setSending(false);
+
+    const sendPromise = (async () => {
+      setError('');
+      try {
+        const to = Principal.fromText(recipient);
+        const sent = await sendMessage(to, messageInput);
+        if (sent) {
+          setMessages((prev) => [...prev, sent]);
+          setAllMessages(prev => ({ ...prev, [recipient]: [...(prev[recipient] || []), sent] }));
+          setMessageInput('');
+          showMessage('Message sent successfully!', 'success');
+        } else {
+          setError('Failed to send message.');
+          showMessage('Failed to send message', 'error');
+        }
+      } catch (error) {
+        setError('Failed to send message.');
+        showMessage('Failed to send message', 'error');
+      }
+    })();
+    
+    await withLoading(sendPromise, 'Sending message...');
   };
 
   // Mark a message as read
   const handleMarkRead = async (id: bigint) => {
-    await markMessageRead(id);
-    setMessages((prev) => prev.map(m => m.id === id ? { ...m, read: true } : m));
-    setAllMessages(prev => ({
-      ...prev,
-      [recipient]: (prev[recipient] || []).map(m => m.id === id ? { ...m, read: true } : m)
-    }));
+    const markReadPromise = (async () => {
+      try {
+        await markMessageRead(id);
+        setMessages((prev) => prev.map(m => m.id === id ? { ...m, read: true } : m));
+        setAllMessages(prev => ({
+          ...prev,
+          [recipient]: (prev[recipient] || []).map(m => m.id === id ? { ...m, read: true } : m)
+        }));
+        showMessage('Message marked as read', 'success');
+      } catch (error) {
+        showMessage('Failed to mark message as read', 'error');
+      }
+    })();
+    
+    await withLoading(markReadPromise, 'Marking as read...');
   };
 
-  // Load all conversations on mount (simulate by polling known partners)
-  useEffect(() => {
-    // For demo, just keep the current recipient's messages in allMessages
-    // In production, you would fetch all conversations from backend or index
-    if (recipient && !allMessages[recipient]) {
-      listMessagesWith(Principal.fromText(recipient)).then(msgs => {
-        setAllMessages(prev => ({ ...prev, [recipient]: msgs }));
-      });
+  // Start new conversation
+  const handleStartConversation = () => {
+    if (!newRecipient.trim()) {
+      showMessage('Please enter a recipient principal', 'error');
+      return;
     }
-  }, [recipient, allMessages]);
+    setRecipient(newRecipient.trim());
+    setNewRecipient('');
+  };
+
+  // Handle Enter key in message input
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
+    }
+  };
+
+  const getLastMessage = (partner: string) => {
+    const msgs = allMessages[partner] || [];
+    return msgs[msgs.length - 1];
+  };
+
+  const formatTime = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) * 1000);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', padding: '2rem' }}>
+    <Box sx={{ display: 'flex', height: 'calc(100vh - 120px)', p: 2 }}>
       {/* Sidebar: Conversation List */}
-      <div style={{ width: 250, borderRight: '1px solid #eee', paddingRight: 16, marginRight: 16 }}>
-        <h3>Conversations</h3>
-        {allPartners.length === 0 && <div>No conversations yet.</div>}
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {allPartners.map(partner => (
-            <li key={partner} style={{ marginBottom: 8 }}>
-              <button
-                style={{
-                  background: partner === recipient ? '#e0e0ff' : '#fff',
-                  border: '1px solid #ccc',
-                  borderRadius: 4,
-                  padding: '4px 8px',
-                  width: '100%',
-                  textAlign: 'left',
-                  position: 'relative',
-                  fontWeight: unreadCounts[partner] > 0 ? 'bold' : 'normal',
-                }}
-                onClick={() => setRecipient(partner)}
-              >
-                {partner}
-                {unreadCounts[partner] > 0 && (
-                  <span style={{
-                    background: 'red',
-                    color: 'white',
-                    borderRadius: '50%',
-                    padding: '2px 6px',
-                    fontSize: 12,
-                    position: 'absolute',
-                    right: 8,
-                    top: 4,
-                  }}>{unreadCounts[partner]}</span>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div style={{ marginTop: 24 }}>
-          <input
-            type="text"
-            placeholder="Add by Principal..."
-            value={recipient}
-            onChange={e => setRecipient(e.target.value)}
-            style={{ width: '100%', marginBottom: 8 }}
-          />
-          <button onClick={() => setRecipient(recipient.trim())} disabled={!recipient.trim()} style={{ width: '100%' }}>
-            Start / Load Conversation
-          </button>
-        </div>
-      </div>
+      <Card sx={{ width: 320, mr: 2, display: 'flex', flexDirection: 'column' }}>
+        <CardContent sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <ChatIcon sx={{ mr: 1, color: 'primary.main' }} />
+            <Typography variant="h6">Conversations</Typography>
+          </Box>
+          
+          {/* New Conversation Input */}
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              size="small"
+              label="New Recipient Principal"
+              value={newRecipient}
+              onChange={(e) => setNewRecipient(e.target.value)}
+              placeholder="Enter principal ID"
+              sx={{ mb: 1 }}
+            />
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={handleStartConversation}
+              disabled={!newRecipient.trim()}
+              startIcon={<PersonIcon />}
+            >
+              Start Conversation
+            </Button>
+          </Box>
+          
+          <Divider sx={{ my: 2 }} />
+          
+          {/* Conversation List */}
+          {allPartners.length === 0 ? (
+            <Alert severity="info">No conversations yet.</Alert>
+          ) : (
+            <List sx={{ flex: 1, overflow: 'auto' }}>
+              {allPartners.map((partner, index) => {
+                const lastMessage = getLastMessage(partner);
+                const unreadCount = unreadCounts[partner];
+                const isSelected = partner === recipient;
+                
+                return (
+                  <React.Fragment key={partner}>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        selected={isSelected}
+                        onClick={() => setRecipient(partner)}
+                        sx={{
+                          borderRadius: 1,
+                          mb: 0.5,
+                          '&.Mui-selected': {
+                            backgroundColor: 'primary.light',
+                            '&:hover': {
+                              backgroundColor: 'primary.light',
+                            },
+                          },
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <Badge badgeContent={unreadCount} color="error">
+                            <Avatar sx={{ bgcolor: isSelected ? 'primary.main' : 'grey.300' }}>
+                              <PersonIcon />
+                            </Avatar>
+                          </Badge>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: unreadCount > 0 ? 'bold' : 'normal',
+                                color: unreadCount > 0 ? 'text.primary' : 'text.secondary',
+                              }}
+                            >
+                              {partner.substring(0, 20)}...
+                            </Typography>
+                          }
+                          secondary={
+                            lastMessage ? (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: unreadCount > 0 ? 'text.primary' : 'text.secondary',
+                                    fontWeight: unreadCount > 0 ? 'bold' : 'normal',
+                                  }}
+                                >
+                                  {lastMessage.content.substring(0, 30)}
+                                  {lastMessage.content.length > 30 && '...'}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {formatTime(lastMessage.timestamp)}
+                                </Typography>
+                              </Box>
+                            ) : (
+                              <Typography variant="caption" color="text.secondary">
+                                No messages yet
+                              </Typography>
+                            )
+                          }
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                    {index < allPartners.length - 1 && <Divider />}
+                  </React.Fragment>
+                );
+              })}
+            </List>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Main Messaging Area */}
-      <div style={{ flex: 1 }}>
-        <h2>Messaging</h2>
-        {loading && <div>Loading messages...</div>}
-        {error && <div style={{ color: 'red' }}>{error}</div>}
-        {recipient && !loading && (
+      <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {!recipient ? (
+          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <MessageIcon sx={{ fontSize: 80, color: 'grey.400', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Select a conversation
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Choose a conversation from the sidebar or start a new one
+              </Typography>
+            </Box>
+          </CardContent>
+        ) : (
           <>
-            <div style={{ border: '1px solid #ccc', padding: 16, minHeight: 200, marginBottom: 16 }}>
-              {messages.length === 0 && <div>No messages yet.</div>}
-              {messages.map(m => (
-                <div key={m.id.toString()} style={{ marginBottom: 8, background: m.from.toText() === MOCK_CURRENT_PRINCIPAL.toText() ? '#e0ffe0' : '#f0f0f0', padding: 8, borderRadius: 4 }}>
-                  <div><b>{m.from.toText() === MOCK_CURRENT_PRINCIPAL.toText() ? 'You' : m.from.toText()}</b>: {m.content}</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>{new Date(Number(m.timestamp) * 1000).toLocaleString()} {m.read ? '(Read)' : <button onClick={() => handleMarkRead(m.id)}>Mark as read</button>}</div>
-                </div>
-              ))}
-            </div>
-            <div>
-              <input
-                type="text"
-                placeholder="Type a message..."
-                value={messageInput}
-                onChange={e => setMessageInput(e.target.value)}
-                style={{ width: 300, marginRight: 8 }}
-                disabled={!recipient}
-              />
-              <button onClick={handleSend} disabled={sending || !messageInput.trim() || !recipient}>
-                {sending ? 'Sending...' : 'Send'}
-              </button>
-            </div>
+            {/* Chat Header */}
+            <CardContent sx={{ pb: 1, borderBottom: 1, borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                  <PersonIcon />
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6">
+                    {recipient.substring(0, 20)}...
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {unreadCounts[recipient] > 0 ? `${unreadCounts[recipient]} unread messages` : 'All messages read'}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+
+            {/* Messages Area */}
+            <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                  <CircularProgress />
+                </Box>
+              ) : error ? (
+                <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+              ) : messages.length === 0 ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <MessageIcon sx={{ fontSize: 60, color: 'grey.400', mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                      No messages yet
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Start the conversation by sending a message
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {messages.map((message) => {
+                    const isOwnMessage = message.from.toText() === MOCK_CURRENT_PRINCIPAL.toText();
+                    
+                    return (
+                      <Box
+                        key={message.id.toString()}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
+                          mb: 1,
+                        }}
+                      >
+                        <Paper
+                          sx={{
+                            p: 2,
+                            maxWidth: '70%',
+                            backgroundColor: isOwnMessage ? 'primary.main' : 'grey.100',
+                            color: isOwnMessage ? 'white' : 'text.primary',
+                            borderRadius: 2,
+                            position: 'relative',
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            {message.content}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <AccessTimeIcon sx={{ fontSize: 14 }} />
+                              <Typography variant="caption">
+                                {new Date(Number(message.timestamp) * 1000).toLocaleTimeString([], { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              {isOwnMessage ? (
+                                message.read ? (
+                                  <DoneAllIcon sx={{ fontSize: 16 }} />
+                                ) : (
+                                  <DoneIcon sx={{ fontSize: 16 }} />
+                                )
+                              ) : (
+                                !message.read && (
+                                  <Button
+                                    size="small"
+                                    variant="text"
+                                    onClick={() => handleMarkRead(message.id)}
+                                    sx={{ 
+                                      color: 'inherit',
+                                      minWidth: 'auto',
+                                      p: 0.5,
+                                      fontSize: '0.75rem'
+                                    }}
+                                  >
+                                    Mark read
+                                  </Button>
+                                )
+                              )}
+                            </Box>
+                          </Box>
+                        </Paper>
+                      </Box>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </Box>
+              )}
+            </Box>
+
+            {/* Message Input */}
+            <CardContent sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  maxRows={4}
+                  placeholder="Type a message..."
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={sending}
+                  variant="outlined"
+                  size="small"
+                />
+                <IconButton
+                  color="primary"
+                  onClick={handleSend}
+                  disabled={sending || !messageInput.trim()}
+                  sx={{ alignSelf: 'flex-end' }}
+                >
+                  <SendIcon />
+                </IconButton>
+              </Box>
+            </CardContent>
           </>
         )}
-      </div>
-    </div>
+      </Card>
+    </Box>
   );
 };
 
