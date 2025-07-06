@@ -20,6 +20,7 @@ import Suspensions from './components/Suspensions';
 import AuditLog from './components/AuditLog';
 import FollowedTracks from './components/FollowedTracks';
 import BannedKeywords from './components/BannedKeywords';
+import MusicPlayer from './components/MusicPlayer';
 import './App.css';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { LoadingProvider } from './contexts/LoadingContext';
