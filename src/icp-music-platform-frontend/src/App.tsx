@@ -93,7 +93,7 @@ const Home = () => (
         WebkitTextFillColor: 'transparent',
         fontWeight: 'bold'
       }}>
-        Welcome to ICP Music Platform
+        Welcome to TuneSphere
       </Typography>
       <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
         The decentralized music platform built on Internet Computer
@@ -289,7 +289,7 @@ const App: React.FC = () => {
                 <MenuIcon />
               </IconButton>
               <Typography variant="h6" sx={{ flexGrow: 0, fontWeight: 700, letterSpacing: 1, display: { xs: 'none', md: 'block' }, mr: 3 }}>
-                ICP Music Platform
+                TuneSphere
               </Typography>
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' }}>
                 {/* Main Navigation */}
@@ -425,7 +425,7 @@ const App: React.FC = () => {
             <Box sx={{ width: 280 }} role="presentation">
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  ICP Music Platform
+                  TuneSphere
                 </Typography>
               </Box>
               

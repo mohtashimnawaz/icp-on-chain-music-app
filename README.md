@@ -1,4 +1,4 @@
-# 🎵 ICP Music Platform
+# 🎵 TuneSphere
 
 A comprehensive decentralized music platform built on the Internet Computer Protocol (ICP) with Rust backend and React frontend.
 

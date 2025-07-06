@@ -2,6 +2,7 @@ import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Float, Html, Stars, Environment } from '@react-three/drei';
 import * as THREE from 'three';
+import { Typography } from '@mui/material';
 
 // 3D Music Notes
 const MusicNotes: React.FC = () => {
@@ -337,9 +338,19 @@ const Home3D: React.FC = () => {
         color: 'white',
         fontFamily: 'Arial, sans-serif'
       }}>
-        <h1 style={{ fontSize: '3rem', margin: '0 0 10px 0', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
-          Welcome to ICP Music Platform
-        </h1>
+        <Typography
+          variant="h2"
+          sx={{
+            fontWeight: 'bold',
+            background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 2,
+          }}
+        >
+          Welcome to TuneSphere
+        </Typography>
         <p style={{ fontSize: '1.2rem', margin: '0 0 20px 0', opacity: 0.9 }}>
           The decentralized music platform built on Internet Computer
         </p>

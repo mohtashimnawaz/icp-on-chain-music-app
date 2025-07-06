@@ -1,6 +1,6 @@
-# ICP Music Platform: DFX Test Commands
+# TuneSphere: DFX Test Commands
 
-This document provides ready-to-use `dfx canister call` commands to test all major backend functions of the ICP Music Platform. Adjust IDs as needed based on your test data.
+This document provides ready-to-use `dfx canister call` commands to test all major backend functions of the TuneSphere. Adjust IDs as needed based on your test data.
 
 ---
 
