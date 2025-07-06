@@ -288,27 +288,30 @@ const App: React.FC = () => {
             </Box>
           </Drawer>
           <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4, p: 2 }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/studio" element={<MusicStudio />} />
-              <Route path="/tracks" element={<TrackList />} />
-              <Route path="/playlists" element={<Playlists />} />
-              <Route path="/followed-tracks" element={<FollowedTracks />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/upload" element={<MusicUpload />} />
-              <Route path="/player" element={<MusicPlayer />} />
-              <Route path="/collaboration" element={<Collaboration />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/artists" element={<ArtistList />} />
-              <Route path="/register-artist" element={<ArtistRegister />} />
-              <Route path="/messaging" element={<Messaging />} />
-              <Route path="/admin/reports" element={<AdminReports />} />
-              <Route path="/moderation-queue" element={<ModerationQueue />} />
-              <Route path="/suspensions" element={<Suspensions />} />
-              <Route path="/audit-log" element={<AuditLog />} />
-              <Route path="/banned-keywords" element={<BannedKeywords />} />
-            </Routes>
+                          <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/studio" element={<MusicStudio />} />
+                <Route path="/tracks" element={<TrackList />} />
+                <Route path="/playlists" element={<Playlists />} />
+                <Route path="/followed-tracks" element={<FollowedTracks />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/upload" element={<MusicUpload />} />
+                <Route path="/player" element={<MusicPlayer />} />
+                <Route path="/collaboration" element={<Collaboration />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/artists" element={<ArtistList />} />
+                <Route path="/register-artist" element={<ArtistRegister />} />
+                <Route path="/messaging" element={<Messaging />} />
+                <Route path="/visualizer-3d" element={<MusicVisualizer3D />} />
+                <Route path="/player-3d" element={<MusicPlayer3D />} />
+                <Route path="/studio-3d" element={<MusicStudio3D />} />
+                <Route path="/admin/reports" element={<AdminReports />} />
+                <Route path="/moderation-queue" element={<ModerationQueue />} />
+                <Route path="/suspensions" element={<Suspensions />} />
+                <Route path="/audit-log" element={<AuditLog />} />
+                <Route path="/banned-keywords" element={<BannedKeywords />} />
+              </Routes>
           </Box>
                   </Box>
         </SnackbarProvider>
