@@ -270,109 +270,113 @@ const App: React.FC = () => {
       <LoadingProvider>
         <SnackbarProvider>
           <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
-          <AppBar position="static" color="transparent" elevation={0}>
-            <Toolbar sx={{ display: 'flex', flexWrap: 'wrap' }}>
+          <AppBar position="static" color="transparent" elevation={0} sx={{
+            background: 'linear-gradient(90deg, rgba(34,34,34,0.95) 60%, rgba(25,118,210,0.7) 100%)',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12)',
+            borderBottom: '1.5px solid #222',
+          }}>
+            <Toolbar sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              minHeight: 72,
+              px: { xs: 1, md: 4 },
+              py: 1,
+              alignItems: 'center',
+              gap: 2,
+            }}>
               <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2, display: { xs: 'block', md: 'none' } }} onClick={() => setDrawerOpen(true)}>
                 <MenuIcon />
               </IconButton>
-              <Typography variant="h6" sx={{ flexGrow: 1, display: { xs: 'none', md: 'block' } }}>
+              <Typography variant="h6" sx={{ flexGrow: 0, fontWeight: 700, letterSpacing: 1, display: { xs: 'none', md: 'block' }, mr: 3 }}>
                 ICP Music Platform
               </Typography>
-              <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
+              <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' }}>
                 {/* Main Navigation */}
-                <Button color="inherit" component={RouterLink} to="/" startIcon={<HomeIcon />}>
-                  Home
-                </Button>
-                <Button color="inherit" component={RouterLink} to="/dashboard" startIcon={<DashboardIcon />}>
-                  Dashboard
-                </Button>
-                <Button color="inherit" component={RouterLink} to="/tracks" startIcon={<MusicNoteIcon />}>
-                  Tracks
-                </Button>
-                <Button color="inherit" component={RouterLink} to="/playlists" startIcon={<QueueMusicIcon />}>
-                  Playlists
-                </Button>
-                <Button color="inherit" component={RouterLink} to="/upload" startIcon={<CloudUploadIcon />}>
-                  Upload
-                </Button>
-                <Button color="inherit" component={RouterLink} to="/player" startIcon={<PlayArrowIcon />}>
-                  Player
-                </Button>
-                
-                {/* 3D Experience with badge */}
-                <Button 
-                  color="inherit" 
-                  component={RouterLink} 
-                  to="/home-3d" 
-                  startIcon={<ViewInArIcon />}
-                  sx={{ position: 'relative' }}
-                >
-                  3D Home
-                  <Chip 
-                    label="NEW" 
-                    size="small" 
-                    sx={{ 
-                      ml: 1, 
-                      height: 16, 
-                      fontSize: '0.6rem',
-                      backgroundColor: 'success.main',
-                      color: 'white'
-                    }} 
-                  />
-                </Button>
-                
-                {/* Notifications with badge */}
-                <Button 
-                  color="inherit" 
-                  component={RouterLink} 
-                  to="/notifications" 
-                  startIcon={<NotificationsIcon />}
-                  sx={{ position: 'relative' }}
-                >
-                  Notifications
-                  {unreadCount > 0 && (
-                    <Chip 
-                      label={unreadCount} 
-                      size="small" 
-                      sx={{ 
-                        ml: 1, 
-                        height: 16, 
-                        fontSize: '0.6rem',
-                        backgroundColor: 'error.main',
-                        color: 'white'
-                      }} 
-                    />
-                  )}
-                </Button>
-              </Box>
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
-                <Tooltip title="Admin Panel">
-                  <Button 
-                    color="inherit" 
-                    component={RouterLink} 
-                    to="/admin/reports"
-                    startIcon={<AdminPanelSettingsIcon />}
-                    sx={{ 
-                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                {[{
+                  label: 'Home', icon: <HomeIcon />, to: '/'
+                }, {
+                  label: 'Dashboard', icon: <DashboardIcon />, to: '/dashboard'
+                }, {
+                  label: 'Tracks', icon: <MusicNoteIcon />, to: '/tracks'
+                }, {
+                  label: 'Playlists', icon: <QueueMusicIcon />, to: '/playlists'
+                }, {
+                  label: 'Upload', icon: <CloudUploadIcon />, to: '/upload'
+                }, {
+                  label: 'Player', icon: <PlayArrowIcon />, to: '/player'
+                }, {
+                  label: '3D Home', icon: <ViewInArIcon />, to: '/home-3d', badge: 'NEW'
+                }, {
+                  label: 'Notifications', icon: <NotificationsIcon />, to: '/notifications', badge: unreadCount > 0 ? unreadCount : null
+                }].map((item, idx) => (
+                  <Button
+                    key={item.label}
+                    color="inherit"
+                    component={RouterLink}
+                    to={item.to}
+                    startIcon={item.icon}
+                    sx={{
+                      fontWeight: 600,
+                      letterSpacing: 1,
+                      px: 2.2,
+                      py: 1.2,
+                      borderRadius: 2,
+                      fontSize: '1.08rem',
+                      background: 'rgba(255,255,255,0.01)',
+                      boxShadow: '0 1px 4px 0 rgba(25,118,210,0.04)',
+                      transition: 'all 0.18s',
+                      position: 'relative',
                       '&:hover': {
-                        backgroundColor: 'rgba(244, 67, 54, 0.2)'
-                      }
+                        background: 'rgba(25,118,210,0.13)',
+                        color: 'primary.main',
+                        transform: 'translateY(-2px) scale(1.04)',
+                        boxShadow: '0 4px 16px 0 rgba(25,118,210,0.10)',
+                        textDecoration: 'underline',
+                      },
+                      ...(item.label === '3D Home' && {
+                        color: 'white',
+                        fontWeight: 700,
+                        textShadow: '0 2px 8px #1976d2',
+                      })
                     }}
                   >
-                    Admin
+                    {item.label}
+                    {item.badge && (
+                      <Chip
+                        label={item.badge}
+                        size="small"
+                        sx={{
+                          ml: 1,
+                          height: 18,
+                          fontSize: '0.7rem',
+                          backgroundColor: item.label === 'Notifications' ? 'error.main' : 'success.main',
+                          color: 'white',
+                          fontWeight: 700,
+                          letterSpacing: 0.5
+                        }}
+                      />
+                    )}
                   </Button>
-                </Tooltip>
+                ))}
               </Box>
-              <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Divider between menu and right controls */}
+              <Box sx={{ height: 40, width: 1, bgcolor: 'rgba(255,255,255,0.08)', mx: 2, display: { xs: 'none', md: 'block' } }} />
+              {/* Right controls */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-                  <IconButton onClick={toggleColorMode} color="inherit">
+                  <IconButton onClick={toggleColorMode} color="inherit" sx={{
+                    borderRadius: 2,
+                    background: 'rgba(255,255,255,0.04)',
+                    '&:hover': { background: 'rgba(25,118,210,0.13)' }
+                  }}>
                     {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                   </IconButton>
                 </Tooltip>
                 {isAuthenticated ? (
                   <>
-                    <IconButton onClick={handleMenu} color="inherit">
-                      <Avatar sx={{ width: 32, height: 32 }}>{principal ? principal.toString().slice(0, 2).toUpperCase() : '?'}</Avatar>
+                    <IconButton onClick={handleMenu} color="inherit" sx={{ ml: 1, borderRadius: 2, background: 'rgba(255,255,255,0.04)', '&:hover': { background: 'rgba(25,118,210,0.13)' } }}>
+                      <Avatar sx={{ width: 36, height: 36, fontWeight: 700, bgcolor: 'primary.main', color: 'white', fontSize: '1.1rem', boxShadow: '0 2px 8px #1976d2' }}>{principal ? principal.toString().slice(0, 2).toUpperCase() : '?'}</Avatar>
                     </IconButton>
                     <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
                       <MenuItem disabled>Logged in as {principal ? principal.toString() : ''} ({walletType})</MenuItem>
@@ -381,10 +385,39 @@ const App: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Button onClick={() => login('plug')} disabled={isLoading} color="primary" variant="contained" sx={{ mr: 1 }}>Connect with Plug</Button>
-                    <Button onClick={() => login('internet-identity')} disabled={isLoading} color="secondary" variant="contained">Connect with Internet Identity</Button>
+                    <Button onClick={() => login('plug')} disabled={isLoading} color="primary" variant="contained" sx={{ mr: 1, borderRadius: 2, fontWeight: 600 }}>Connect with Plug</Button>
+                    <Button onClick={() => login('internet-identity')} disabled={isLoading} color="secondary" variant="contained" sx={{ borderRadius: 2, fontWeight: 600 }}>Connect with Internet Identity</Button>
                   </>
                 )}
+                {/* Beautiful Admin button */}
+                <Tooltip title="Admin Panel">
+                  <Button
+                    color="inherit"
+                    component={RouterLink}
+                    to="/admin/reports"
+                    startIcon={<AdminPanelSettingsIcon />}
+                    sx={{
+                      ml: 2,
+                      borderRadius: 3,
+                      fontWeight: 700,
+                      px: 2.5,
+                      py: 1.2,
+                      background: 'linear-gradient(90deg, #5c1a1b 60%, #a83232 100%)',
+                      color: 'white',
+                      boxShadow: '0 2px 8px 0 #a83232',
+                      letterSpacing: 1,
+                      transition: 'all 0.18s',
+                      '&:hover': {
+                        background: 'linear-gradient(90deg, #a83232 60%, #5c1a1b 100%)',
+                        color: '#fff',
+                        transform: 'translateY(-2px) scale(1.04)',
+                        boxShadow: '0 6px 18px 0 #a83232',
+                      }
+                    }}
+                  >
+                    Admin
+                  </Button>
+                </Tooltip>
               </Box>
             </Toolbar>
           </AppBar>
