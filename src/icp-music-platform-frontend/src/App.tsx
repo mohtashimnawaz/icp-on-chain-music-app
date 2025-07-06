@@ -45,6 +45,9 @@ import Avatar from '@mui/material/Avatar';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ListItemButton from '@mui/material/ListItemButton';
 import Paper from '@mui/material/Paper';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Tooltip from '@mui/material/Tooltip';
 
 const Home = () => (
   <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -95,17 +98,6 @@ const Home = () => (
   </Box>
 );
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: { main: '#1976d2' },
-    background: { default: '#181818', paper: '#222' },
-  },
-  components: {
-    MuiAppBar: { styleOverrides: { root: { borderBottom: '1px solid #333' } } },
-  },
-});
-
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/dashboard', label: 'Dashboard' },
@@ -135,6 +127,55 @@ const App: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mode, setMode] = useState<'light' | 'dark'>('dark');
+
+  // Load theme preference from localStorage
+  useEffect(() => {
+    const savedMode = localStorage.getItem('theme-mode') as 'light' | 'dark';
+    if (savedMode) {
+      setMode(savedMode);
+    }
+  }, []);
+
+  // Save theme preference to localStorage
+  const toggleColorMode = () => {
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    setMode(newMode);
+    localStorage.setItem('theme-mode', newMode);
+  };
+
+  const theme = createTheme({
+    palette: {
+      mode,
+      primary: { main: '#1976d2' },
+      background: { 
+        default: mode === 'dark' ? '#181818' : '#f5f5f5', 
+        paper: mode === 'dark' ? '#222' : '#fff' 
+      },
+    },
+    components: {
+      MuiAppBar: { 
+        styleOverrides: { 
+          root: { 
+            borderBottom: `1px solid ${mode === 'dark' ? '#333' : '#e0e0e0'}`,
+            background: mode === 'dark' ? 'rgba(34, 34, 34, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)'
+          } 
+        } 
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            transition: 'all 0.3s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: mode === 'dark' ? '0 8px 25px rgba(0,0,0,0.3)' : '0 8px 25px rgba(0,0,0,0.1)'
+            }
+          }
+        }
+      }
+    },
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -191,7 +232,12 @@ const App: React.FC = () => {
                   <Button key={link.to} color="inherit" component={RouterLink} to={link.to}>{link.label}</Button>
                 ))}
               </Box>
-              <Box sx={{ ml: 2 }}>
+              <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+                  <IconButton onClick={toggleColorMode} color="inherit">
+                    {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                  </IconButton>
+                </Tooltip>
                 {isAuthenticated ? (
                   <>
                     <IconButton onClick={handleMenu} color="inherit">
