@@ -52,6 +52,36 @@ import Paper from '@mui/material/Paper';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Tooltip from '@mui/material/Tooltip';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Collapse from '@mui/material/Collapse';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import Chip from '@mui/material/Chip';
+
+// Icons for navigation
+import HomeIcon from '@mui/icons-material/Home';
+import ViewInArIcon from '@mui/icons-material/ViewInAr';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import QueueMusicIcon from '@mui/icons-material/QueueMusic';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import GroupIcon from '@mui/icons-material/Group';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import PersonIcon from '@mui/icons-material/Person';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import MessageIcon from '@mui/icons-material/Message';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import HeadphonesIcon from '@mui/icons-material/Headphones';
+import MicIcon from '@mui/icons-material/Mic';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import ReportIcon from '@mui/icons-material/Report';
+import SecurityIcon from '@mui/icons-material/Security';
+import BlockIcon from '@mui/icons-material/Block';
+import HistoryIcon from '@mui/icons-material/History';
+import FilterListIcon from '@mui/icons-material/FilterList';
 
 const Home = () => (
   <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -102,32 +132,58 @@ const Home = () => (
   </Box>
 );
 
-const navLinks = [
-  { to: '/', label: 'Home' },
-  { to: '/home-3d', label: '3D Home' },
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/studio', label: 'Music Studio' },
-  { to: '/tracks', label: 'Track List' },
-  { to: '/playlists', label: 'Playlists' },
-  { to: '/followed-tracks', label: 'Followed Tracks' },
-  { to: '/notifications', label: 'Notifications' },
-  { to: '/upload', label: 'Music Upload' },
-  { to: '/player', label: 'Music Player' },
-  { to: '/collaboration', label: 'Collaboration' },
-  { to: '/analytics', label: 'Analytics' },
-  { to: '/artists', label: 'Artists' },
-  { to: '/register-artist', label: 'Register Artist' },
-  { to: '/messaging', label: 'Messaging' },
-  { to: '/visualizer-3d', label: '3D Visualizer' },
-  { to: '/player-3d', label: '3D Player' },
-  { to: '/studio-3d', label: '3D Studio' },
+const navCategories = [
+  {
+    title: 'Main',
+    items: [
+      { to: '/', label: 'Home', icon: <HomeIcon /> },
+      { to: '/home-3d', label: '3D Home', icon: <ViewInArIcon />, badge: 'NEW' },
+      { to: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
+    ]
+  },
+  {
+    title: 'Music',
+    items: [
+      { to: '/tracks', label: 'Track List', icon: <MusicNoteIcon /> },
+      { to: '/playlists', label: 'Playlists', icon: <QueueMusicIcon /> },
+      { to: '/followed-tracks', label: 'Followed Tracks', icon: <FavoriteIcon /> },
+      { to: '/upload', label: 'Music Upload', icon: <CloudUploadIcon /> },
+      { to: '/player', label: 'Music Player', icon: <PlayArrowIcon /> },
+    ]
+  },
+  {
+    title: '3D Experience',
+    items: [
+      { to: '/visualizer-3d', label: '3D Visualizer', icon: <VisibilityIcon />, badge: 'NEW' },
+      { to: '/player-3d', label: '3D Player', icon: <HeadphonesIcon />, badge: 'NEW' },
+      { to: '/studio-3d', label: '3D Studio', icon: <MicIcon />, badge: 'NEW' },
+    ]
+  },
+  {
+    title: 'Community',
+    items: [
+      { to: '/collaboration', label: 'Collaboration', icon: <GroupIcon /> },
+      { to: '/analytics', label: 'Analytics', icon: <AnalyticsIcon /> },
+      { to: '/artists', label: 'Artists', icon: <PersonIcon /> },
+      { to: '/register-artist', label: 'Register Artist', icon: <PersonAddIcon /> },
+      { to: '/messaging', label: 'Messaging', icon: <MessageIcon /> },
+      { to: '/notifications', label: 'Notifications', icon: <NotificationsIcon /> },
+    ]
+  },
+  {
+    title: 'Studio',
+    items: [
+      { to: '/studio', label: 'Music Studio', icon: <MicIcon /> },
+    ]
+  }
 ];
+
 const adminLinks = [
-  { to: '/admin/reports', label: 'Reports' },
-  { to: '/moderation-queue', label: 'Moderation' },
-  { to: '/suspensions', label: 'Suspensions' },
-  { to: '/audit-log', label: 'Audit Log' },
-  { to: '/banned-keywords', label: 'Banned Keywords' },
+  { to: '/admin/reports', label: 'Reports', icon: <ReportIcon /> },
+  { to: '/moderation-queue', label: 'Moderation', icon: <FilterListIcon /> },
+  { to: '/suspensions', label: 'Suspensions', icon: <SecurityIcon /> },
+  { to: '/audit-log', label: 'Audit Log', icon: <HistoryIcon /> },
+  { to: '/banned-keywords', label: 'Banned Keywords', icon: <BlockIcon /> },
 ];
 
 const App: React.FC = () => {
@@ -222,23 +278,90 @@ const App: React.FC = () => {
               <Typography variant="h6" sx={{ flexGrow: 1, display: { xs: 'none', md: 'block' } }}>
                 ICP Music Platform
               </Typography>
-              <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-                {navLinks.map(link => (
-                  <Button key={link.to} color="inherit" component={RouterLink} to={link.to} sx={{ position: 'relative' }}>
-                    {link.label}
-                    {link.label === 'Notifications' && unreadCount > 0 && (
-                      <Box component="span" sx={{
-                        background: 'red', color: 'white', borderRadius: '50%', px: 1, fontSize: 12, position: 'absolute', top: -8, right: -18, ml: 1
-                      }}>{unreadCount}</Box>
-                    )}
-                  </Button>
-                ))}
+              <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
+                {/* Main Navigation */}
+                <Button color="inherit" component={RouterLink} to="/" startIcon={<HomeIcon />}>
+                  Home
+                </Button>
+                <Button color="inherit" component={RouterLink} to="/dashboard" startIcon={<DashboardIcon />}>
+                  Dashboard
+                </Button>
+                <Button color="inherit" component={RouterLink} to="/tracks" startIcon={<MusicNoteIcon />}>
+                  Tracks
+                </Button>
+                <Button color="inherit" component={RouterLink} to="/playlists" startIcon={<QueueMusicIcon />}>
+                  Playlists
+                </Button>
+                <Button color="inherit" component={RouterLink} to="/upload" startIcon={<CloudUploadIcon />}>
+                  Upload
+                </Button>
+                <Button color="inherit" component={RouterLink} to="/player" startIcon={<PlayArrowIcon />}>
+                  Player
+                </Button>
+                
+                {/* 3D Experience with badge */}
+                <Button 
+                  color="inherit" 
+                  component={RouterLink} 
+                  to="/home-3d" 
+                  startIcon={<ViewInArIcon />}
+                  sx={{ position: 'relative' }}
+                >
+                  3D Home
+                  <Chip 
+                    label="NEW" 
+                    size="small" 
+                    sx={{ 
+                      ml: 1, 
+                      height: 16, 
+                      fontSize: '0.6rem',
+                      backgroundColor: 'success.main',
+                      color: 'white'
+                    }} 
+                  />
+                </Button>
+                
+                {/* Notifications with badge */}
+                <Button 
+                  color="inherit" 
+                  component={RouterLink} 
+                  to="/notifications" 
+                  startIcon={<NotificationsIcon />}
+                  sx={{ position: 'relative' }}
+                >
+                  Notifications
+                  {unreadCount > 0 && (
+                    <Chip 
+                      label={unreadCount} 
+                      size="small" 
+                      sx={{ 
+                        ml: 1, 
+                        height: 16, 
+                        fontSize: '0.6rem',
+                        backgroundColor: 'error.main',
+                        color: 'white'
+                      }} 
+                    />
+                  )}
+                </Button>
               </Box>
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mr: 1 }}>Admin:</Typography>
-                {adminLinks.map(link => (
-                  <Button key={link.to} color="inherit" component={RouterLink} to={link.to}>{link.label}</Button>
-                ))}
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
+                <Tooltip title="Admin Panel">
+                  <Button 
+                    color="inherit" 
+                    component={RouterLink} 
+                    to="/admin/reports"
+                    startIcon={<AdminPanelSettingsIcon />}
+                    sx={{ 
+                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(244, 67, 54, 0.2)'
+                      }
+                    }}
+                  >
+                    Admin
+                  </Button>
+                </Tooltip>
               </Box>
               <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
@@ -266,22 +389,145 @@ const App: React.FC = () => {
             </Toolbar>
           </AppBar>
           <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={{ display: { xs: 'block', md: 'none' } }}>
-            <Box sx={{ width: 250 }} role="presentation" onClick={() => setDrawerOpen(false)}>
-              <List>
-                {navLinks.map(link => (
-                  <ListItem key={link.to} disablePadding>
-                    <ListItemButton component={RouterLink} to={link.to}>
-                      <ListItemText primary={link.label} />
+            <Box sx={{ width: 280 }} role="presentation">
+              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  ICP Music Platform
+                </Typography>
+              </Box>
+              
+              <List sx={{ pt: 1 }}>
+                {/* Main Section */}
+                <ListItem>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    MAIN
+                  </Typography>
+                </ListItem>
+                {navCategories[0].items.map(item => (
+                  <ListItem key={item.to} disablePadding>
+                    <ListItemButton component={RouterLink} to={item.to} onClick={() => setDrawerOpen(false)}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.label} />
+                      {item.badge && (
+                        <Chip 
+                          label={item.badge} 
+                          size="small" 
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.7rem',
+                            backgroundColor: 'success.main',
+                            color: 'white'
+                          }} 
+                        />
+                      )}
                     </ListItemButton>
                   </ListItem>
                 ))}
-              </List>
-              <Divider />
-              <List>
-                <ListItem><Typography variant="subtitle2">Admin</Typography></ListItem>
+                
+                <Divider sx={{ my: 1 }} />
+                
+                {/* Music Section */}
+                <ListItem>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    MUSIC
+                  </Typography>
+                </ListItem>
+                {navCategories[1].items.map(item => (
+                  <ListItem key={item.to} disablePadding>
+                    <ListItemButton component={RouterLink} to={item.to} onClick={() => setDrawerOpen(false)}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+                
+                <Divider sx={{ my: 1 }} />
+                
+                {/* 3D Experience Section */}
+                <ListItem>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    3D EXPERIENCE
+                  </Typography>
+                </ListItem>
+                {navCategories[2].items.map(item => (
+                  <ListItem key={item.to} disablePadding>
+                    <ListItemButton component={RouterLink} to={item.to} onClick={() => setDrawerOpen(false)}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.label} />
+                      {item.badge && (
+                        <Chip 
+                          label={item.badge} 
+                          size="small" 
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.7rem',
+                            backgroundColor: 'success.main',
+                            color: 'white'
+                          }} 
+                        />
+                      )}
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+                
+                <Divider sx={{ my: 1 }} />
+                
+                {/* Community Section */}
+                <ListItem>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    COMMUNITY
+                  </Typography>
+                </ListItem>
+                {navCategories[3].items.map(item => (
+                  <ListItem key={item.to} disablePadding>
+                    <ListItemButton component={RouterLink} to={item.to} onClick={() => setDrawerOpen(false)}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.label} />
+                      {item.label === 'Notifications' && unreadCount > 0 && (
+                        <Chip 
+                          label={unreadCount} 
+                          size="small" 
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.7rem',
+                            backgroundColor: 'error.main',
+                            color: 'white'
+                          }} 
+                        />
+                      )}
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+                
+                <Divider sx={{ my: 1 }} />
+                
+                {/* Studio Section */}
+                <ListItem>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    STUDIO
+                  </Typography>
+                </ListItem>
+                {navCategories[4].items.map(item => (
+                  <ListItem key={item.to} disablePadding>
+                    <ListItemButton component={RouterLink} to={item.to} onClick={() => setDrawerOpen(false)}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+                
+                <Divider sx={{ my: 1 }} />
+                
+                {/* Admin Section */}
+                <ListItem>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'error.main' }}>
+                    ADMIN
+                  </Typography>
+                </ListItem>
                 {adminLinks.map(link => (
                   <ListItem key={link.to} disablePadding>
-                    <ListItemButton component={RouterLink} to={link.to}>
+                    <ListItemButton component={RouterLink} to={link.to} onClick={() => setDrawerOpen(false)}>
+                      <ListItemIcon sx={{ minWidth: 40 }}>{link.icon}</ListItemIcon>
                       <ListItemText primary={link.label} />
                     </ListItemButton>
                   </ListItem>
