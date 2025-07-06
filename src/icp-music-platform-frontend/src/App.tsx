@@ -24,6 +24,7 @@ import MusicPlayer from './components/MusicPlayer';
 import MusicVisualizer3D from './components/MusicVisualizer3D';
 import MusicPlayer3D from './components/MusicPlayer3D';
 import MusicStudio3D from './components/MusicStudio3D';
+import Home3D from './components/Home3D';
 import './App.css';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { LoadingProvider } from './contexts/LoadingContext';
@@ -103,6 +104,7 @@ const Home = () => (
 
 const navLinks = [
   { to: '/', label: 'Home' },
+  { to: '/home-3d', label: '3D Home' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/studio', label: 'Music Studio' },
   { to: '/tracks', label: 'Track List' },
@@ -290,6 +292,7 @@ const App: React.FC = () => {
           <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4, p: 2 }}>
                           <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/home-3d" element={<Home3D />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/studio" element={<MusicStudio />} />
                 <Route path="/tracks" element={<TrackList />} />
