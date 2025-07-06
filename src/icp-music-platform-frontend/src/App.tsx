@@ -21,6 +21,9 @@ import AuditLog from './components/AuditLog';
 import FollowedTracks from './components/FollowedTracks';
 import BannedKeywords from './components/BannedKeywords';
 import MusicPlayer from './components/MusicPlayer';
+import MusicVisualizer3D from './components/MusicVisualizer3D';
+import MusicPlayer3D from './components/MusicPlayer3D';
+import MusicStudio3D from './components/MusicStudio3D';
 import './App.css';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { LoadingProvider } from './contexts/LoadingContext';
@@ -113,6 +116,9 @@ const navLinks = [
   { to: '/artists', label: 'Artists' },
   { to: '/register-artist', label: 'Register Artist' },
   { to: '/messaging', label: 'Messaging' },
+  { to: '/visualizer-3d', label: '3D Visualizer' },
+  { to: '/player-3d', label: '3D Player' },
+  { to: '/studio-3d', label: '3D Studio' },
 ];
 const adminLinks = [
   { to: '/admin/reports', label: 'Reports' },
