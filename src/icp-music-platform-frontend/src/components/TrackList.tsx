@@ -3,6 +3,7 @@ import { listTracks, rateTrack, addComment, deleteTrack, updateTrack, getTrackFi
 import ReportModal from './ReportModal';
 import type { ReportTargetType, LicenseType, TrackLicense, TrackVersion, VersionComparison, WorkflowStatus, WorkflowStep, WorkflowTemplate } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 import { useSnackbar } from '../contexts/SnackbarContext';
+import { useLoading } from '../contexts/LoadingContext';
 // MUI imports
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -65,6 +66,7 @@ const TrackList: React.FC = () => {
   const [genreSearch, setGenreSearch] = useState('');
   const [followed, setFollowed] = useState<Set<string>>(new Set());
   const { showMessage } = useSnackbar();
+  const { withLoading } = useLoading();
 
   const fetchTracks = async () => {
     setLoading(true);

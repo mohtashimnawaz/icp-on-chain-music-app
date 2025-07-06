@@ -1,5 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { getRoyaltyBalance, withdrawRoyalties, getPaymentHistory } from '../services/musicService';
+import { useSnackbar } from '../contexts/SnackbarContext';
+import { useLoading } from '../contexts/LoadingContext';
+
+// MUI imports
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+
+import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import PaymentIcon from '@mui/icons-material/Payment';
+import HistoryIcon from '@mui/icons-material/History';
 
 const ARTIST_ID = 1n; // TODO: Replace with real artist/user context
 
@@ -9,6 +32,9 @@ const Dashboard: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string|null>(null);
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const { showMessage } = useSnackbar();
+  const { withLoading } = useLoading();
 
   useEffect(() => {
     fetchRoyalty();
@@ -19,77 +45,165 @@ const Dashboard: React.FC = () => {
     try {
       const r = await getRoyaltyBalance(ARTIST_ID);
       setRoyalty(BigInt(r));
-    } catch { setRoyalty(0n); }
+    } catch { 
+      setRoyalty(0n); 
+      showMessage('Failed to fetch royalty balance', 'error');
+    }
   };
+
   const fetchHistory = async () => {
     try {
       const h = await getPaymentHistory(ARTIST_ID);
       setHistory(h);
-    } catch { setHistory([]); }
-  };
-  const handleWithdraw = async () => {
-    setLoading(true);
-    setMessage(null);
-    try {
-      const amt = BigInt(withdrawAmount);
-      const ok = await withdrawRoyalties(ARTIST_ID, amt);
-      if (ok) {
-        setMessage('Withdrawal successful!');
-        fetchRoyalty();
-        fetchHistory();
-      } else {
-        setMessage('Withdrawal failed.');
-      }
-    } catch {
-      setMessage('Withdrawal failed.');
-    } finally {
-      setLoading(false);
+    } catch { 
+      setHistory([]); 
+      showMessage('Failed to fetch payment history', 'error');
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!withdrawAmount || BigInt(withdrawAmount) <= 0) {
+      showMessage('Please enter a valid amount', 'error');
+      return;
+    }
+
+    if (BigInt(withdrawAmount) > royalty) {
+      showMessage('Insufficient balance', 'error');
+      return;
+    }
+
+    const withdrawPromise = (async () => {
+      try {
+        const amt = BigInt(withdrawAmount);
+        const ok = await withdrawRoyalties(ARTIST_ID, amt);
+        if (ok) {
+          setMessage('Withdrawal successful!');
+          setMessageType('success');
+          showMessage('Withdrawal successful!', 'success');
+          setWithdrawAmount('');
+          await fetchRoyalty();
+          await fetchHistory();
+        } else {
+          setMessage('Withdrawal failed.');
+          setMessageType('error');
+          showMessage('Withdrawal failed.', 'error');
+        }
+      } catch {
+        setMessage('Withdrawal failed.');
+        setMessageType('error');
+        showMessage('Withdrawal failed.', 'error');
+      }
+    })();
+    
+    await withLoading(withdrawPromise, 'Processing withdrawal...');
+  };
+
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Dashboard</h2>
-      <p>Welcome to the dashboard</p>
-      <div style={{ marginTop: 32, background: '#222', padding: 24, borderRadius: 8 }}>
-        <h3>Royalty & Payments</h3>
-        <div>Current Royalty Balance: <b>{royalty.toString()}</b></div>
-        <div style={{ marginTop: 16 }}>
-          <input
-            type="number"
-            placeholder="Amount to withdraw"
-            value={withdrawAmount}
-            onChange={e => setWithdrawAmount(e.target.value)}
-            style={{ marginRight: 8 }}
-          />
-          <button onClick={handleWithdraw} disabled={loading || !withdrawAmount}>Withdraw</button>
-        </div>
-        {message && <div style={{ color: message.includes('success') ? 'lime' : 'red', marginTop: 8 }}>{message}</div>}
-        <div style={{ marginTop: 24 }}>
-          <h4>Payment History</h4>
-          {history.length === 0 ? <div>No payments yet.</div> : (
-            <table style={{ width: '100%', background: '#111', borderRadius: 4 }}>
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Payer</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((p, i) => (
-                  <tr key={i}>
-                    <td>{new Date(Number(p.timestamp) * 1000).toLocaleString()}</td>
-                    <td>{p.payer?.toString?.() ?? p.payer}</td>
-                    <td>{p.amount?.toString?.() ?? p.amount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
+        Dashboard
+      </Typography>
+      
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 3 }}>
+        {/* Royalty Balance Card */}
+        <Box sx={{ flex: { xs: '1', md: '0 0 33%' } }}>
+          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #1976d2, #42a5f5)' }}>
+            <CardContent sx={{ textAlign: 'center', color: 'white' }}>
+              <AccountBalanceWalletIcon sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h4" gutterBottom>
+                {royalty.toString()}
+              </Typography>
+              <Typography variant="h6">
+                Current Balance
+              </Typography>
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Withdrawal Card */}
+        <Box sx={{ flex: { xs: '1', md: '0 0 67%' } }}>
+          <Paper sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <PaymentIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">Withdraw Royalties</Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+              <TextField
+                type="number"
+                label="Amount to withdraw"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                sx={{ flexGrow: 1 }}
+                InputProps={{
+                  inputProps: { min: 0, max: royalty.toString() }
+                }}
+              />
+              <Button 
+                variant="contained" 
+                onClick={handleWithdraw} 
+                disabled={loading || !withdrawAmount}
+                sx={{ minWidth: 120 }}
+              >
+                Withdraw
+              </Button>
+            </Box>
+            
+            {message && (
+              <Alert severity={messageType} sx={{ mt: 2 }}>
+                {message}
+              </Alert>
+            )}
+          </Paper>
+        </Box>
+      </Box>
+
+      {/* Payment History */}
+      <Box sx={{ width: '100%' }}>
+        <Paper sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <HistoryIcon sx={{ mr: 1 }} />
+            <Typography variant="h6">Payment History</Typography>
+          </Box>
+          
+          {history.length === 0 ? (
+            <Alert severity="info">
+              No payment history available yet.
+            </Alert>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Timestamp</TableCell>
+                    <TableCell>Payer</TableCell>
+                    <TableCell align="right">Amount</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {history.map((payment, index) => (
+                    <TableRow key={index} hover>
+                      <TableCell>
+                        {new Date(Number(payment.timestamp) * 1000).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        {payment.payer?.toString?.() ?? payment.payer}
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" color="success.main" fontWeight="bold">
+                          {payment.amount?.toString?.() ?? payment.amount}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
-        </div>
-      </div>
-    </div>
+        </Paper>
+      </Box>
+    </Box>
   );
 };
+
 export default Dashboard; 

@@ -22,6 +22,7 @@ import FollowedTracks from './components/FollowedTracks';
 import BannedKeywords from './components/BannedKeywords';
 import './App.css';
 import { SnackbarProvider } from './contexts/SnackbarContext';
+import { LoadingProvider } from './contexts/LoadingContext';
 
 // MUI imports
 import AppBar from '@mui/material/AppBar';
@@ -42,11 +43,54 @@ import Link from '@mui/material/Link';
 import Avatar from '@mui/material/Avatar';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ListItemButton from '@mui/material/ListItemButton';
+import Paper from '@mui/material/Paper';
 
 const Home = () => (
-  <Box sx={{ p: 4 }}>
-    <Typography variant="h4" gutterBottom>Welcome to ICP Music Platform</Typography>
-    <Typography>Connect your wallet to start your musical journey!</Typography>
+  <Box sx={{ p: 4, textAlign: 'center' }}>
+    <Box sx={{ mb: 6 }}>
+      <Typography variant="h2" gutterBottom sx={{ 
+        background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+        backgroundClip: 'text',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        fontWeight: 'bold'
+      }}>
+        Welcome to ICP Music Platform
+      </Typography>
+      <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
+        The decentralized music platform built on Internet Computer
+      </Typography>
+    </Box>
+    
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4, mb: 6 }}>
+      <Paper sx={{ p: 3, textAlign: 'center', background: 'rgba(25, 118, 210, 0.1)' }}>
+        <Typography variant="h6" gutterBottom color="primary">🎵 Upload & Share</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Upload your music tracks and share them with the world on a decentralized platform
+        </Typography>
+      </Paper>
+      
+      <Paper sx={{ p: 3, textAlign: 'center', background: 'rgba(156, 39, 176, 0.1)' }}>
+        <Typography variant="h6" gutterBottom color="secondary">💰 Earn Royalties</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Get paid directly through smart contracts for your music streams and downloads
+        </Typography>
+      </Paper>
+      
+      <Paper sx={{ p: 3, textAlign: 'center', background: 'rgba(76, 175, 80, 0.1)' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'success.main' }}>🤝 Collaborate</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Connect with other artists and collaborate on music projects seamlessly
+        </Typography>
+      </Paper>
+    </Box>
+    
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h6" gutterBottom>Connect your wallet to start your musical journey!</Typography>
+      <Typography variant="body2" color="text.secondary">
+        Choose between Plug Wallet or Internet Identity to get started
+      </Typography>
+    </Box>
   </Box>
 );
 
@@ -116,8 +160,9 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <SnackbarProvider>
-        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
+      <LoadingProvider>
+        <SnackbarProvider>
+          <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
           <AppBar position="static" color="transparent" elevation={0}>
             <Toolbar sx={{ display: 'flex', flexWrap: 'wrap' }}>
               <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2, display: { xs: 'block', md: 'none' } }} onClick={() => setDrawerOpen(true)}>
@@ -210,8 +255,9 @@ const App: React.FC = () => {
               <Route path="/banned-keywords" element={<BannedKeywords />} />
             </Routes>
           </Box>
-        </Box>
-      </SnackbarProvider>
+                  </Box>
+        </SnackbarProvider>
+      </LoadingProvider>
     </ThemeProvider>
   );
 };
