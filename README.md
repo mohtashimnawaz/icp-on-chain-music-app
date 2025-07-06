@@ -1,5 +1,7 @@
 # 🎵 TuneSphere
 
+**Decentralized. Immersive. Limitless Music.**
+
 A comprehensive decentralized music platform built on the Internet Computer Protocol (ICP) with Rust backend and React frontend.
 
 ## 🚀 Features

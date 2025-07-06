@@ -28,6 +28,7 @@ import Home3D from './components/Home3D';
 import './App.css';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { LoadingProvider } from './contexts/LoadingContext';
+import TuneSphereLogo from './assets/tunesphere-logo.svg';
 
 // MUI imports
 import AppBar from '@mui/material/AppBar';
@@ -94,6 +95,9 @@ const Home = () => (
         fontWeight: 'bold'
       }}>
         Welcome to TuneSphere
+      </Typography>
+      <Typography variant="h5" color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+        Decentralized. Immersive. Limitless Music.
       </Typography>
       <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
         The decentralized music platform built on Internet Computer
@@ -288,7 +292,8 @@ const App: React.FC = () => {
               <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2, display: { xs: 'block', md: 'none' } }} onClick={() => setDrawerOpen(true)}>
                 <MenuIcon />
               </IconButton>
-              <Typography variant="h6" sx={{ flexGrow: 0, fontWeight: 700, letterSpacing: 1, display: { xs: 'none', md: 'block' }, mr: 3 }}>
+              <Typography variant="h6" sx={{ flexGrow: 0, fontWeight: 700, letterSpacing: 1, mr: 3, display: 'flex', alignItems: 'center' }}>
+                <img src={TuneSphereLogo} alt="TuneSphere Logo" style={{ height: 36, marginRight: 10, verticalAlign: 'middle' }} />
                 TuneSphere
               </Typography>
               <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' }}>

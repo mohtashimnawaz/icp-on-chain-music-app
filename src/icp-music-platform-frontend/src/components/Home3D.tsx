@@ -351,6 +351,9 @@ const Home3D: React.FC = () => {
         >
           Welcome to TuneSphere
         </Typography>
+        <Typography variant="h5" color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+          Decentralized. Immersive. Limitless Music.
+        </Typography>
         <p style={{ fontSize: '1.2rem', margin: '0 0 20px 0', opacity: 0.9 }}>
           The decentralized music platform built on Internet Computer
         </p>
