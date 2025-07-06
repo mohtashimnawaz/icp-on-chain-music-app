@@ -1,96 +1,224 @@
 import React, { useEffect, useState } from 'react';
 import { listBannedKeywords, addBannedKeyword, removeBannedKeyword } from '../services/musicService';
+import { useSnackbar } from '../contexts/SnackbarContext';
+import { useLoading } from '../contexts/LoadingContext';
+
+// MUI imports
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Divider from '@mui/material/Divider';
+import BlockIcon from '@mui/icons-material/Block';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SecurityIcon from '@mui/icons-material/Security';
 
 const BannedKeywords: React.FC = () => {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string|null>(null);
-  const [message, setMessage] = useState<string|null>(null);
+
+  const { showMessage } = useSnackbar();
+  const { withLoading } = useLoading();
 
   useEffect(() => {
     fetchKeywords();
   }, []);
 
   const fetchKeywords = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await listBannedKeywords();
-      setKeywords(list);
-    } catch {
-      setError('Failed to load keywords.');
-    } finally {
-      setLoading(false);
-    }
+    const fetchPromise = (async () => {
+      setError(null);
+      try {
+        const list = await listBannedKeywords();
+        setKeywords(list);
+      } catch (error) {
+        setError('Failed to load keywords.');
+        showMessage('Failed to load banned keywords', 'error');
+      }
+    })();
+    
+    await withLoading(fetchPromise, 'Loading banned keywords...');
   };
 
   const handleAdd = async () => {
-    if (!newKeyword.trim()) return;
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const ok = await addBannedKeyword(newKeyword.trim());
-      if (ok) {
-        setMessage('Keyword added.');
-        setNewKeyword('');
-        fetchKeywords();
-      } else {
-        setError('Failed to add keyword.');
-      }
-    } catch {
-      setError('Failed to add keyword.');
-    } finally {
-      setLoading(false);
+    if (!newKeyword.trim()) {
+      showMessage('Please enter a keyword', 'error');
+      return;
     }
+
+    const addPromise = (async () => {
+      setError(null);
+      try {
+        const ok = await addBannedKeyword(newKeyword.trim());
+        if (ok) {
+          showMessage('Keyword added successfully!', 'success');
+          setNewKeyword('');
+          fetchKeywords();
+        } else {
+          setError('Failed to add keyword.');
+          showMessage('Failed to add keyword', 'error');
+        }
+      } catch (error) {
+        setError('Failed to add keyword.');
+        showMessage('Failed to add keyword', 'error');
+      }
+    })();
+    
+    await withLoading(addPromise, 'Adding keyword...');
   };
 
   const handleRemove = async (kw: string) => {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const ok = await removeBannedKeyword(kw);
-      if (ok) {
-        setMessage('Keyword removed.');
-        fetchKeywords();
-      } else {
+    const removePromise = (async () => {
+      setError(null);
+      try {
+        const ok = await removeBannedKeyword(kw);
+        if (ok) {
+          showMessage('Keyword removed successfully!', 'success');
+          fetchKeywords();
+        } else {
+          setError('Failed to remove keyword.');
+          showMessage('Failed to remove keyword', 'error');
+        }
+      } catch (error) {
         setError('Failed to remove keyword.');
+        showMessage('Failed to remove keyword', 'error');
       }
-    } catch {
-      setError('Failed to remove keyword.');
-    } finally {
-      setLoading(false);
+    })();
+    
+    await withLoading(removePromise, 'Removing keyword...');
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleAdd();
     }
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Banned Keywords (Admin)</h2>
-      <div style={{ marginBottom: 16 }}>
-        <input
-          type="text"
-          placeholder="Add new keyword"
-          value={newKeyword}
-          onChange={e => setNewKeyword(e.target.value)}
-          style={{ marginRight: 8 }}
-        />
-        <button onClick={handleAdd} disabled={loading || !newKeyword.trim()}>Add</button>
-      </div>
-      {message && <div style={{ color: 'lime', marginBottom: 8 }}>{message}</div>}
-      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
-      {loading && <div>Loading...</div>}
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {keywords.map((kw, i) => (
-          <li key={i} style={{ marginBottom: 8, background: '#222', padding: 8, borderRadius: 4, display: 'flex', alignItems: 'center' }}>
-            <span style={{ flex: 1 }}>{kw}</span>
-            <button onClick={() => handleRemove(kw)} disabled={loading}>Remove</button>
-          </li>
-        ))}
-      </ul>
-      {keywords.length === 0 && !loading && <div>No banned keywords.</div>}
-    </div>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+        <SecurityIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
+        <Typography variant="h4">
+          Banned Keywords Management
+        </Typography>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
+      )}
+
+      {/* Add New Keyword */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+            <AddIcon sx={{ mr: 1 }} />
+            Add New Banned Keyword
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TextField
+              fullWidth
+              label="Keyword"
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Enter keyword to ban"
+              disabled={loading}
+            />
+            <Button
+              variant="contained"
+              onClick={handleAdd}
+              disabled={loading || !newKeyword.trim()}
+              startIcon={<AddIcon />}
+              sx={{ minWidth: 120 }}
+            >
+              Add
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Keywords List */}
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+              <BlockIcon sx={{ mr: 1 }} />
+              Banned Keywords ({keywords.length})
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={fetchKeywords}
+              disabled={loading}
+              startIcon={<SecurityIcon />}
+            >
+              Refresh
+            </Button>
+          </Box>
+
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : keywords.length === 0 ? (
+            <Alert severity="info">
+              No banned keywords found. Add keywords above to start filtering content.
+            </Alert>
+          ) : (
+            <Paper variant="outlined">
+              <List>
+                {keywords.map((keyword, index) => (
+                  <React.Fragment key={index}>
+                    <ListItem>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip
+                              icon={<BlockIcon />}
+                              label={keyword}
+                              color="error"
+                              variant="outlined"
+                              size="small"
+                            />
+                          </Box>
+                        }
+                        secondary={`Banned keyword #${index + 1}`}
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          color="error"
+                          onClick={() => handleRemove(keyword)}
+                          disabled={loading}
+                          title="Remove keyword"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                    {index < keywords.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            </Paper>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
+
 export default BannedKeywords; 
