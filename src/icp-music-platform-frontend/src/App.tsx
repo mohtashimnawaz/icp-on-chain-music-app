@@ -115,6 +115,7 @@ const navLinks = [
   { to: '/followed-tracks', label: 'Followed Tracks' },
   { to: '/notifications', label: 'Notifications' },
   { to: '/upload', label: 'Music Upload' },
+  { to: '/player', label: 'Music Player' },
   { to: '/collaboration', label: 'Collaboration' },
   { to: '/analytics', label: 'Analytics' },
   { to: '/artists', label: 'Artists' },
@@ -244,6 +245,7 @@ const App: React.FC = () => {
               <Route path="/followed-tracks" element={<FollowedTracks />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/upload" element={<MusicUpload />} />
+              <Route path="/player" element={<MusicPlayer />} />
               <Route path="/collaboration" element={<Collaboration />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/artists" element={<ArtistList />} />
