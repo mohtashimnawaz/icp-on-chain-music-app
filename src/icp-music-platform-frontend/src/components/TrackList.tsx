@@ -19,6 +19,11 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Avatar from '@mui/material/Avatar';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 const TRACK_TARGET_TYPE: ReportTargetType = { Track: null };
 
@@ -480,306 +485,52 @@ const TrackList: React.FC = () => {
           {tracks.map((track, idx) => {
             const licObj = license && license[track.id.toString()] ? license[track.id.toString()] : undefined;
             return (
-              <Paper key={idx} sx={{ mb: 3, p: 3, borderRadius: 2, bgcolor: '#232323' }} elevation={2}>
-                {editMode[track.id.toString()] ? (
-                  <Stack spacing={2}>
-                    <TextField
-                      label="Title"
-                      value={editFields[track.id.toString()]?.title ?? ''}
-                      onChange={e => handleEditChange(track.id, 'title', (e.target.value ?? '') + '')}
-                      disabled={actionLoading[track.id.toString()]}
-                    />
-                    <TextField
-                      label="Description"
-                      value={editFields[track.id.toString()]?.description ?? ''}
-                      onChange={e => handleEditChange(track.id, 'description', (e.target.value ?? '') + '')}
-                      disabled={actionLoading[track.id.toString()]}
-                    />
-                    <TextField
-                      label="Contributors (comma-separated IDs)"
-                      value={editFields[track.id.toString()]?.contributors ?? ''}
-                      onChange={e => handleEditChange(track.id, 'contributors', (e.target.value ?? '') + '')}
-                      disabled={actionLoading[track.id.toString()]}
-                    />
-                    <TextField
-                      label="Genre"
-                      value={editFields[track.id.toString()]?.genre ?? track.genre ?? ''}
-                      onChange={e => handleEditChange(track.id, 'genre', (e.target.value ?? '') + '')}
-                      disabled={actionLoading[track.id.toString()]}
-                    />
-                    <TextField
-                      label="Tags (comma-separated)"
-                      value={editFields[track.id.toString()]?.tags ?? (Array.isArray(track.tags) ? track.tags.join(', ') : '')}
-                      onChange={e => handleEditChange(track.id, 'tags', (e.target.value ?? '') + '')}
-                      disabled={actionLoading[track.id.toString()]}
-                    />
-                    <Stack direction="row" spacing={2}>
-                      <Button variant="contained" onClick={() => handleEditSave(track)} disabled={actionLoading[track.id.toString()]}>Save</Button>
-                      <Button onClick={() => handleEditCancel(track.id)} disabled={actionLoading[track.id.toString()]}>Cancel</Button>
-                    </Stack>
-                  </Stack>
-                ) : (
-                  <Box>
-                    <Typography variant="h6">{track.title}</Typography>
-                    <Typography variant="body2" sx={{ mb: 1 }}>{track.description}</Typography>
-                    <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-                      <Chip label={`Contributors: ${track.contributors?.join(', ')}`} size="small" />
-                      <Chip label={`Genre: ${track.genre ?? ''}`} size="small" />
-                      <Chip label={`Tags: ${Array.isArray(track.tags) ? track.tags.join(', ') : ''}`} size="small" />
-                      <Chip label={`Play count: ${track.play_count ?? 0}`} size="small" />
-                      <Chip label={`Avg rating: ${track.ratings && track.ratings.length > 0 ? (track.ratings.reduce((acc: number, r: any) => acc + r[1], 0) / track.ratings.length).toFixed(2) : 'N/A'}`} size="small" />
-                    </Stack>
-                    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                      <Typography>Rate:</Typography>
-                      <Select
-                        value={rating[track.id.toString()] || 1}
-                        onChange={e => setRating(prev => ({ ...prev, [track.id.toString()]: Number(e.target.value) }))}
-                        size="small"
-                        disabled={actionLoading[track.id.toString()]}
-                        sx={{ minWidth: 80 }}
-                      >
-                        {[1, 2, 3, 4, 5].map(val => (
-                          <MenuItem key={val} value={val}>{val}</MenuItem>
-                        ))}
-                      </Select>
-                      <Button onClick={() => handleRate(track.id)} disabled={actionLoading[track.id.toString()]} variant="outlined">
-                        {actionLoading[track.id.toString()] ? <CircularProgress size={18} /> : 'Rate'}
-                      </Button>
-                    </Stack>
-                    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                      <TextField
-                        label="Comment"
-                        value={comment[track.id.toString()] || ''}
-                        onChange={e => setComment(prev => ({ ...prev, [track.id.toString()]: e.target.value }))}
-                        size="small"
-                        disabled={actionLoading[track.id.toString()]}
-                        sx={{ width: 200 }}
-                      />
-                      <Button onClick={() => handleComment(track.id)} disabled={actionLoading[track.id.toString()] || !(comment[track.id.toString()] && comment[track.id.toString()].trim())} variant="outlined">
-                        {actionLoading[track.id.toString()] ? <CircularProgress size={18} /> : 'Add Comment'}
-                      </Button>
-                    </Stack>
-                    <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-                      <Button onClick={() => handleEdit(track)} disabled={actionLoading[track.id.toString()]} variant="outlined">Edit</Button>
-                      <Button onClick={() => handleDelete(track.id)} disabled={actionLoading[track.id.toString()]} color="error" variant="outlined">Delete</Button>
-                      <Button onClick={() => handleDownload(track.id, track.title)} disabled={actionLoading[track.id.toString()]} variant="outlined">Download</Button>
-                      <Button onClick={() => handleOpenReport(track.id)} variant="outlined">Report</Button>
-                    </Stack>
-                    <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-                      <Typography>License:</Typography>
-                      {licenseLoading[track.id.toString()] ? (
-                        <CircularProgress size={18} />
-                      ) : licenseEdit[track.id.toString()] ? (
-                        <Stack spacing={1}>
-                          <Typography>Type:</Typography>
-                          <Select
-                            value={(() => {
-                              const lf = licenseFields[track.id.toString()];
-                              if (lf && lf.type) {
-                                const keys = Object.keys(lf.type);
-                                return keys.length > 0 ? keys[0] : 'AllRightsReserved';
-                              }
-                              return 'AllRightsReserved';
-                            })()}
-                            onChange={e => handleLicenseFieldChange(track.id, 'type', LICENSE_OPTIONS.find(opt => Object.keys(opt.value)[0] === e.target.value)?.value || { AllRightsReserved: null })}
-                            size="small"
-                          >
-                            {LICENSE_OPTIONS.map(opt => (
-                              <MenuItem key={Object.keys(opt.value)[0]} value={Object.keys(opt.value)[0]}>{opt.label}</MenuItem>
-                            ))}
-                          </Select>
-                          <TextField
-                            label="Terms"
-                            value={licenseFields[track.id.toString()]?.terms ?? ''}
-                            onChange={e => handleLicenseFieldChange(track.id, 'terms', e.target.value)}
-                            size="small"
-                          />
-                          <TextField
-                            label="Contract"
-                            value={licenseFields[track.id.toString()]?.contract ?? ''}
-                            onChange={e => handleLicenseFieldChange(track.id, 'contract', (e.target.value ?? '') + '')}
-                            size="small"
-                          />
-                          <Stack direction="row" spacing={2}>
-                            <Button onClick={() => handleLicenseSave(track.id)} disabled={licenseLoading[track.id.toString()]}>Save</Button>
-                            <Button onClick={() => handleLicenseCancel(track.id)}>Cancel</Button>
-                          </Stack>
-                          {licenseError[track.id.toString()] && <Alert severity="error">{licenseError[track.id.toString()]}</Alert>}
-                        </Stack>
-                      ) : licObj ? (
-                        <Stack spacing={1}>
-                          <Typography>Type:</Typography>
-                          <Chip label={(licObj.license_type && typeof licObj.license_type === 'object') ? Object.keys(licObj.license_type as object)[0] : ''} size="small" />
-                          <Chip label={(Array.isArray(licObj.terms) && licObj.terms.length > 0) ? licObj.terms[0] : ''} size="small" />
-                          <Chip label={(Array.isArray(licObj.contract_text) && licObj.contract_text.length > 0) ? licObj.contract_text[0] : ''} size="small" />
-                          <Button onClick={() => handleLicenseEdit(track.id)}>Edit License</Button>
-                        </Stack>
-                      ) : (
-                        <Button onClick={() => handleLicenseEdit(track.id)}>Set License</Button>
-                      )}
-                    </Stack>
-                    <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-                      <Button onClick={() => handleToggleVersions(track.id)} variant="outlined">
-                        {versionOpen[track.id.toString()] ? 'Hide Versions' : 'Show Versions'}
-                      </Button>
-                    </Stack>
-                    {versionOpen[track.id.toString()] && (
-                      <Box>
-                        {versionLoading[track.id.toString()] ? (
-                          <CircularProgress />
-                        ) : versions[track.id.toString()] && versions[track.id.toString()].length > 0 ? (
-                          <>
-                            <Typography variant="h6">Version History:</Typography>
-                            <List>
-                              {versions[track.id.toString()].map((v, i) => (
-                                <ListItem key={v.version}>
-                                  <Typography variant="body2">
-                                    <b>v{v.version}</b> - {v.title} ({new Date(Number(v.changed_at) * 1000).toLocaleString()})
-                                    {v.change_description && <span> - {v.change_description[0]}</span>}
-                                    <Button onClick={() => handleRevert(track.id, v.version)} disabled={revertLoading[track.id.toString()]}>
-                                      {revertLoading[track.id.toString()] ? 'Reverting...' : 'Revert to this version'}
-                                    </Button>
-                                  </Typography>
-                                </ListItem>
-                              ))}
-                            </List>
-                            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                              <Typography>Compare Versions:</Typography>
-                              <Select
-                                value={compareA[track.id.toString()] || ''}
-                                onChange={e => setCompareA(prev => ({ ...prev, [track.id.toString()]: e.target.value }))}
-                                size="small"
-                              >
-                                <MenuItem value="">-- Select --</MenuItem>
-                                {versions[track.id.toString()].map(v => (
-                                  <MenuItem key={v.version} value={v.version}>{v.version}</MenuItem>
-                                ))}
-                              </Select>
-                              <Select
-                                value={compareB[track.id.toString()] || ''}
-                                onChange={e => setCompareB(prev => ({ ...prev, [track.id.toString()]: e.target.value }))}
-                                size="small"
-                              >
-                                <MenuItem value="">-- Select --</MenuItem>
-                                {versions[track.id.toString()].map(v => (
-                                  <MenuItem key={v.version} value={v.version}>{v.version}</MenuItem>
-                                ))}
-                              </Select>
-                              <Button onClick={() => handleCompare(track.id)}>Compare</Button>
-                            </Stack>
-                            {track && track.id && comparison[track.id.toString()] && (
-                              <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: '#333' }}>
-                                <Typography variant="h6">Comparison Result:</Typography>
-                                <Typography variant="body2">Title changed: {comparison[track.id.toString()]?.title_changed ? 'Yes' : 'No'}</Typography>
-                                {comparison[track.id.toString()]?.title_diff?.[0] && (
-                                  <Typography variant="body2">Title diff: {comparison[track.id.toString()]?.title_diff?.[0]}</Typography>
-                                )}
-                                <Typography variant="body2">Description changed: {comparison[track.id.toString()]?.description_changed ? 'Yes' : 'No'}</Typography>
-                                {comparison[track.id.toString()]?.description_diff?.[0] && (
-                                  <Typography variant="body2">Description diff: {comparison[track.id.toString()]?.description_diff?.[0]}</Typography>
-                                )}
-                                <Typography variant="body2">Contributors changed: {comparison[track.id.toString()]?.contributors_changed ? 'Yes' : 'No'}</Typography>
-                                {comparison[track.id.toString()]?.contributors_diff?.[0] && (
-                                  <Typography variant="body2">Contributors diff: {comparison[track.id.toString()]?.contributors_diff?.[0]}</Typography>
-                                )}
-                              </Box>
-                            )}
-                          </>
-                        ) : <Typography>No version history.</Typography>}
-                        {versionError[track.id.toString()] && <Alert severity="error">{versionError[track.id.toString()]}</Alert>}
-                      </Box>
-                    )}
-                    <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-                      <Button onClick={() => handleToggleWorkflow(track.id)} variant="outlined">
-                        {workflowOpen[track.id.toString()] ? 'Hide Workflow' : 'Show Workflow'}
-                      </Button>
-                    </Stack>
-                    {workflowOpen[track.id.toString()] && (
-                      <Box>
-                        {workflowLoading[track.id.toString()] ? (
-                          <CircularProgress />
-                        ) : workflowSteps[track.id.toString()] && workflowSteps[track.id.toString()].length > 0 ? (
-                          <>
-                            <Typography variant="h6">Workflow Steps:</Typography>
-                            <List>
-                              {workflowSteps[track.id.toString()].map((step, i) => (
-                                <ListItem key={step.id?.toString() ?? i}>
-                                  <Typography variant="body2">
-                                    <b>{step.step_name ?? ''}</b> | Status: {Object.keys(step.status ?? {})[0] ?? ''} | Assigned to: {((step.assigned_to as unknown as bigint[]) ?? []).map((a: bigint) => a.toString()).join(', ')}
-                                    {step.due_date && step.due_date[0] && (
-                                      <> | Due: {new Date(Number(step.due_date[0]) * 1000).toLocaleDateString()}</>
-                                    )}
-                                    {step.notes && step.notes[0] && (
-                                      <> | Notes: {step.notes[0]}</>
-                                    )}
-                                    {Object.keys(step.status ?? {})[0] !== 'Completed' && step.id !== undefined && (
-                                      <Button onClick={() => handleUpdateStepStatus(track.id, step.id as bigint, { Completed: null } as unknown as WorkflowStatus)} disabled={updateStepLoading[step.id?.toString() ?? '']}>
-                                        {updateStepLoading[step.id?.toString() ?? ''] ? 'Marking...' : 'Mark Completed'}
-                                      </Button>
-                                    )}
-                                  </Typography>
-                                </ListItem>
-                              ))}
-                            </List>
-                          </>
-                        ) : <Typography>No workflow steps.</Typography>}
-                        <Stack direction="row" spacing={2} sx={{ mt: 2, borderTop: '1px solid #333', pt: 2 }}>
-                          <Typography>Add Workflow Step:</Typography>
-                          <TextField
-                            label="Step name"
-                            value={newStep[track.id.toString()]?.name || ''}
-                            onChange={e => handleNewStepChange(track.id, 'name', e.target.value)}
-                            size="small"
-                          />
-                          <TextField
-                            label="Assignees (comma-separated IDs)"
-                            value={newStep[track.id.toString()]?.assignees || ''}
-                            onChange={e => handleNewStepChange(track.id, 'assignees', e.target.value)}
-                            size="small"
-                          />
-                          <TextField
-                            label="Due date"
-                            type="date"
-                            value={newStep[track.id.toString()]?.due || ''}
-                            onChange={e => handleNewStepChange(track.id, 'due', e.target.value)}
-                            size="small"
-                          />
-                          <TextField
-                            label="Notes"
-                            value={newStep[track.id.toString()]?.notes || ''}
-                            onChange={e => handleNewStepChange(track.id, 'notes', e.target.value)}
-                            size="small"
-                          />
-                          <Button onClick={() => handleAddStep(track.id)} disabled={addStepLoading[track.id.toString()] || !(newStep[track.id.toString()]?.name)}>
-                            {addStepLoading[track.id.toString()] ? <CircularProgress size={18} /> : 'Add Step'}
-                          </Button>
-                        </Stack>
-                        {addStepError[track.id.toString()] && <Alert severity="error">{addStepError[track.id.toString()]}</Alert>}
-                      </Box>
-                    )}
-                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                      {followed.has(track?.id?.toString?.() ?? '') ? (
-                        <Button onClick={() => handleUnfollow(track.id)} disabled={!!actionLoading?.[track?.id?.toString?.() ?? '']}>Unfollow</Button>
-                      ) : (
-                        <Button onClick={() => handleFollow(track.id)} disabled={!!actionLoading?.[track?.id?.toString?.() ?? '']}>Follow</Button>
-                      )}
-                    </Stack>
+              <Card 
+                key={idx}
+                sx={{ 
+                  background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+                  backgroundSize: '200% 200%',
+                  animation: 'gradientMove 8s ease-in-out infinite',
+                  boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+                  borderRadius: 4,
+                  transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+                  '&:hover': {
+                    transform: 'translateY(-4px) scale(1.04)',
+                    boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+                  },
+                  mb: 2
+                }}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48, mr: 2, boxShadow: '0 2px 8px #42a5f5' }}>
+                      <MusicNoteIcon />
+                    </Avatar>
+                    <Typography variant="h6" component="div" sx={{
+                      background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontWeight: 800,
+                      letterSpacing: 1,
+                      textShadow: '0 2px 8px #42a5f5',
+                    }}>
+                      {track.title}
+                    </Typography>
                   </Box>
-                )}
-                {actionError[track.id.toString()] && <Alert severity="error" sx={{ mt: 2 }}>{actionError[track.id.toString()]}</Alert>}
-                {track.comments && track.comments.length > 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="h6">Comments:</Typography>
-                    <List>
-                      {track.comments.map((c: any, i: number) => (
-                        <ListItem key={i}>
-                          <Typography variant="body2">{c.text} (by {c.commenter})</Typography>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-              </Paper>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {track.description}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<PlayArrowIcon />}
+                    sx={{ borderRadius: 2, fontWeight: 700 }}
+                    onClick={() => handleDownload(track.id, track.title)}
+                  >
+                    Download
+                  </Button>
+                </CardContent>
+              </Card>
             );
           })}
         </List>
