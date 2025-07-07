@@ -107,25 +107,50 @@ const Dashboard: React.FC = () => {
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 3 }}>
         {/* Royalty Balance Card */}
         <Box sx={{ flex: { xs: '1', md: '0 0 33%' } }}>
-          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #1976d2, #42a5f5)' }}>
+          <Card sx={{
+            height: '100%',
+            background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 8s ease-in-out infinite',
+            boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+            borderRadius: 4,
+            transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+            '&:hover': {
+              transform: 'translateY(-4px) scale(1.04)',
+              boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+            },
+          }}>
             <CardContent sx={{ textAlign: 'center', color: 'white' }}>
-              <AccountBalanceWalletIcon sx={{ fontSize: 48, mb: 2 }} />
-              <Typography variant="h4" gutterBottom>
+              <AccountBalanceWalletIcon sx={{ fontSize: 48, mb: 2, filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+              <Typography variant="h4" gutterBottom sx={{
+                background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
+                letterSpacing: 1,
+                textShadow: '0 2px 8px #42a5f5',
+              }}>
                 {royalty.toString()}
               </Typography>
-              <Typography variant="h6">
-                Current Balance
-              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 1 }}>Current Balance</Typography>
             </CardContent>
           </Card>
         </Box>
 
         {/* Withdrawal Card */}
         <Box sx={{ flex: { xs: '1', md: '0 0 67%' } }}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{
+            p: 3,
+            background: 'linear-gradient(90deg, #00e5ff 0%, #7b1fa2 100%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 12s ease-in-out infinite',
+            borderRadius: 4,
+            boxShadow: '0 4px 24px 0 rgba(0,229,255,0.12)',
+          }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <PaymentIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">Withdraw Royalties</Typography>
+              <PaymentIcon sx={{ mr: 1, color: '#fff', filter: 'drop-shadow(0 2px 8px #00e5ff)' }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 1, color: '#fff' }}>Withdraw Royalties</Typography>
             </Box>
             
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>

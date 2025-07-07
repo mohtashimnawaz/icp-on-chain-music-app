@@ -190,6 +190,16 @@ const adminLinks = [
   { to: '/banned-keywords', label: 'Banned Keywords', icon: <BlockIcon /> },
 ];
 
+// 1. Add new vibrant color palette and gradients
+const vibrantGradients = {
+  main: 'linear-gradient(90deg, #7b1fa2 0%, #1976d2 40%, #42a5f5 70%, #00e5ff 100%)',
+  accent: 'linear-gradient(90deg, #ff9800 0%, #f44336 100%)',
+  green: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)',
+  pink: 'linear-gradient(90deg, #ff6a00 0%, #ee0979 100%)',
+  blue: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
+  purple: 'linear-gradient(90deg, #7b1fa2 0%, #9c27b0 100%)',
+};
+
 const App: React.FC = () => {
   const { isAuthenticated, principal, login, logout, isLoading, walletType } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -215,33 +225,88 @@ const App: React.FC = () => {
   const theme = createTheme({
     palette: {
       mode,
-      primary: { main: '#1976d2' },
-      background: { 
-        default: mode === 'dark' ? '#181818' : '#f5f5f5', 
-        paper: mode === 'dark' ? '#222' : '#fff' 
+      primary: { main: '#7b1fa2' },
+      secondary: { main: '#00e5ff' },
+      success: { main: '#43e97b' },
+      error: { main: '#f44336' },
+      warning: { main: '#ff9800' },
+      info: { main: '#42a5f5' },
+      background: {
+        default: mode === 'dark' ? '#18122B' : '#f5f5fa',
+        paper: mode === 'dark' ? '#231942' : '#fff',
+      },
+      text: {
+        primary: mode === 'dark' ? '#fff' : '#18122B',
+        secondary: mode === 'dark' ? '#b39ddb' : '#5e548e',
       },
     },
+    typography: {
+      fontFamily: 'Poppins, system-ui, sans-serif',
+      h1: { fontWeight: 900, letterSpacing: 1 },
+      h2: { fontWeight: 800, letterSpacing: 1 },
+      h3: { fontWeight: 700 },
+      h4: { fontWeight: 700 },
+      h5: { fontWeight: 600 },
+      h6: { fontWeight: 600 },
+      button: { fontWeight: 700, letterSpacing: 1 },
+    },
     components: {
-      MuiAppBar: { 
-        styleOverrides: { 
-          root: { 
-            borderBottom: `1px solid ${mode === 'dark' ? '#333' : '#e0e0e0'}`,
-            background: mode === 'dark' ? 'rgba(34, 34, 34, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)'
-          } 
-        } 
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            borderBottom: `2px solid ${mode === 'dark' ? '#7b1fa2' : '#42a5f5'}`,
+            background: vibrantGradients.main,
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 8s ease-in-out infinite',
+            backdropFilter: 'blur(18px)',
+            boxShadow: '0 4px 32px 0 rgba(123,31,162,0.18)',
+          },
+        },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            transition: 'all 0.3s ease-in-out',
+            transition: 'all 0.3s cubic-bezier(.4,2,.6,1)',
+            borderRadius: 18,
+            boxShadow: '0 8px 32px 0 rgba(123,31,162,0.12)',
+            background: mode === 'dark' ? 'rgba(34,34,54,0.95)' : 'rgba(255,255,255,0.95)',
             '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: mode === 'dark' ? '0 8px 25px rgba(0,0,0,0.3)' : '0 8px 25px rgba(0,0,0,0.1)'
-            }
-          }
-        }
-      }
+              transform: 'translateY(-4px) scale(1.03)',
+              boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+              background: vibrantGradients.purple,
+              color: '#fff',
+            },
+          },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            fontWeight: 700,
+            background: vibrantGradients.accent,
+            color: '#fff',
+            boxShadow: '0 2px 8px 0 #f44336',
+            transition: 'all 0.18s',
+            '&:hover': {
+              background: vibrantGradients.pink,
+              color: '#fff',
+              boxShadow: '0 6px 18px 0 #ee0979',
+              transform: 'translateY(-2px) scale(1.04)',
+            },
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            background: vibrantGradients.green,
+            color: '#18122B',
+          },
+        },
+      },
     },
   });
 
@@ -271,6 +336,16 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider theme={theme}>
+      {/* Animated gradient keyframes for vibrant backgrounds */}
+      <style>
+        {`
+          @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `}
+      </style>
       <LoadingProvider>
         <SnackbarProvider>
           <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
