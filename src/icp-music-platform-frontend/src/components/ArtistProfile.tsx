@@ -341,34 +341,114 @@ const ArtistProfile: React.FC = () => {
 
       {/* Stats Cards */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
-        <Card sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <MusicNoteIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-            <Typography variant="h4">{tracks.length}</Typography>
+        <Card sx={{
+          flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' },
+          background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+          backgroundSize: '200% 200%',
+          animation: 'gradientMove 8s ease-in-out infinite',
+          boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+          borderRadius: 4,
+          transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+          '&:hover': {
+            transform: 'translateY(-4px) scale(1.04)',
+            boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+          },
+        }}>
+          <CardContent sx={{ textAlign: 'center', color: 'white' }}>
+            <MusicNoteIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+            <Typography variant="h4" sx={{
+              background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 900,
+              letterSpacing: 1,
+              textShadow: '0 2px 8px #42a5f5',
+            }}>{tracks.length}</Typography>
             <Typography variant="body2">Total Tracks</Typography>
           </CardContent>
         </Card>
         
-        <Card sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <PeopleIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-            <Typography variant="h4">{followers}</Typography>
+        <Card sx={{
+          flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' },
+          background: 'linear-gradient(135deg, #42a5f5 0%, #7b1fa2 100%)',
+          backgroundSize: '200% 200%',
+          animation: 'gradientMove 8s ease-in-out infinite',
+          boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+          borderRadius: 4,
+          transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+          '&:hover': {
+            transform: 'translateY(-4px) scale(1.04)',
+            boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+          },
+        }}>
+          <CardContent sx={{ textAlign: 'center', color: 'white' }}>
+            <PeopleIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #7b1fa2)' }} />
+            <Typography variant="h4" sx={{
+              background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 900,
+              letterSpacing: 1,
+              textShadow: '0 2px 8px #7b1fa2',
+            }}>{followers}</Typography>
             <Typography variant="body2">Followers</Typography>
           </CardContent>
         </Card>
         
-        <Card sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <TrendingUpIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-            <Typography variant="h4">{following}</Typography>
+        <Card sx={{
+          flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' },
+          background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+          backgroundSize: '200% 200%',
+          animation: 'gradientMove 8s ease-in-out infinite',
+          boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+          borderRadius: 4,
+          transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+          '&:hover': {
+            transform: 'translateY(-4px) scale(1.04)',
+            boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+          },
+        }}>
+          <CardContent sx={{ textAlign: 'center', color: 'white' }}>
+            <TrendingUpIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+            <Typography variant="h4" sx={{
+              background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 900,
+              letterSpacing: 1,
+              textShadow: '0 2px 8px #42a5f5',
+            }}>{following}</Typography>
             <Typography variant="body2">Following</Typography>
           </CardContent>
         </Card>
         
-        <Card sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <StarIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
-            <Typography variant="h4">
+        <Card sx={{
+          flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' },
+          background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+          backgroundSize: '200% 200%',
+          animation: 'gradientMove 8s ease-in-out infinite',
+          boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+          borderRadius: 4,
+          transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+          '&:hover': {
+            transform: 'translateY(-4px) scale(1.04)',
+            boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+          },
+        }}>
+          <CardContent sx={{ textAlign: 'center', color: 'white' }}>
+            <StarIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+            <Typography variant="h4" sx={{
+              background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 900,
+              letterSpacing: 1,
+              textShadow: '0 2px 8px #42a5f5',
+            }}>
               {analytics?.avg_track_rating ? Number(analytics.avg_track_rating).toFixed(1) : 'N/A'}
             </Typography>
             <Typography variant="body2">Avg Rating</Typography>

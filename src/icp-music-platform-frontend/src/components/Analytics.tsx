@@ -206,40 +206,116 @@ const Analytics: React.FC = () => {
       {/* Platform Stats Cards */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
         <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <Card sx={{ background: 'linear-gradient(135deg, #1976d2, #42a5f5)' }}>
+          <Card sx={{
+            background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 8s ease-in-out infinite',
+            boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+            borderRadius: 4,
+            transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+            '&:hover': {
+              transform: 'translateY(-4px) scale(1.04)',
+              boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+            },
+          }}>
             <CardContent sx={{ textAlign: 'center', color: 'white' }}>
-              <MusicNoteIcon sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.total_tracks || 0}</Typography>
+              <MusicNoteIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+              <Typography variant="h4" sx={{
+                background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
+                letterSpacing: 1,
+                textShadow: '0 2px 8px #42a5f5',
+              }}>{stats.total_tracks || 0}</Typography>
               <Typography variant="body2">Total Tracks</Typography>
             </CardContent>
           </Card>
         </Box>
         
         <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <Card sx={{ background: 'linear-gradient(135deg, #388e3c, #66bb6a)' }}>
+          <Card sx={{
+            background: 'linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 8s ease-in-out infinite',
+            boxShadow: '0 8px 32px 0 rgba(56,142,60,0.18)',
+            borderRadius: 4,
+            transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+            '&:hover': {
+              transform: 'translateY(-4px) scale(1.04)',
+              boxShadow: '0 16px 48px 0 rgba(56,142,60,0.22)',
+            },
+          }}>
             <CardContent sx={{ textAlign: 'center', color: 'white' }}>
-              <PeopleIcon sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.total_users || 0}</Typography>
+              <PeopleIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #66bb6a)' }} />
+              <Typography variant="h4" sx={{
+                background: 'linear-gradient(90deg, #fff, #00e5ff, #388e3c)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
+                letterSpacing: 1,
+                textShadow: '0 2px 8px #66bb6a',
+              }}>{stats.total_users || 0}</Typography>
               <Typography variant="body2">Total Users</Typography>
             </CardContent>
           </Card>
         </Box>
         
         <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <Card sx={{ background: 'linear-gradient(135deg, #f57c00, #ff9800)' }}>
+          <Card sx={{
+            background: 'linear-gradient(135deg, #f57c00 0%, #ff9800 100%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 8s ease-in-out infinite',
+            boxShadow: '0 8px 32px 0 rgba(245,124,0,0.18)',
+            borderRadius: 4,
+            transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+            '&:hover': {
+              transform: 'translateY(-4px) scale(1.04)',
+              boxShadow: '0 16px 48px 0 rgba(245,124,0,0.22)',
+            },
+          }}>
             <CardContent sx={{ textAlign: 'center', color: 'white' }}>
-              <TrendingUpIcon sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.total_plays || 0}</Typography>
+              <TrendingUpIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #ff9800)' }} />
+              <Typography variant="h4" sx={{
+                background: 'linear-gradient(90deg, #fff, #00e5ff, #f57c00)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
+                letterSpacing: 1,
+                textShadow: '0 2px 8px #ff9800',
+              }}>{stats.total_plays || 0}</Typography>
               <Typography variant="body2">Total Plays</Typography>
             </CardContent>
           </Card>
         </Box>
         
         <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' } }}>
-          <Card sx={{ background: 'linear-gradient(135deg, #7b1fa2, #9c27b0)' }}>
+          <Card sx={{
+            background: 'linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 8s ease-in-out infinite',
+            boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+            borderRadius: 4,
+            transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+            '&:hover': {
+              transform: 'translateY(-4px) scale(1.04)',
+              boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+            },
+          }}>
             <CardContent sx={{ textAlign: 'center', color: 'white' }}>
-              <MonetizationOnIcon sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h4">{stats.total_revenue || 0}</Typography>
+              <MonetizationOnIcon sx={{ fontSize: 40, mb: 1, filter: 'drop-shadow(0 2px 8px #9c27b0)' }} />
+              <Typography variant="h4" sx={{
+                background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 900,
+                letterSpacing: 1,
+                textShadow: '0 2px 8px #9c27b0',
+              }}>{stats.total_revenue || 0}</Typography>
               <Typography variant="body2">Total Revenue</Typography>
             </CardContent>
           </Card>
