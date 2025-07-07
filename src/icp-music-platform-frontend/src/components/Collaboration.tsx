@@ -450,9 +450,28 @@ const Collaboration: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card sx={{
+          background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+          backgroundSize: '200% 200%',
+          animation: 'gradientMove 8s ease-in-out infinite',
+          boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+          borderRadius: 4,
+          transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+          '&:hover': {
+            transform: 'translateY(-4px) scale(1.04)',
+            boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+          },
+        }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{
+              background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 800,
+              letterSpacing: 1,
+              textShadow: '0 2px 8px #42a5f5',
+            }}>
               Your Tasks
             </Typography>
             {tasks.length === 0 ? (
