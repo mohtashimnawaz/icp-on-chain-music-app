@@ -336,36 +336,37 @@ const Home3D: React.FC = () => {
         left: 20,
         zIndex: 1000,
         color: 'white',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Poppins, Arial, sans-serif',
+        background: 'rgba(34,34,54,0.85)',
+        borderRadius: '18px',
+        boxShadow: '0 4px 32px 0 rgba(123,31,162,0.18)',
+        padding: '32px 40px',
+        minWidth: '320px',
+        maxWidth: '90vw',
+        backdropFilter: 'blur(12px)',
+        border: '2px solid #7b1fa2',
       }}>
-        <Typography
-          variant="h2"
-          sx={{
-            fontWeight: 'bold',
-            background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mb: 2,
-          }}
-        >
-          Welcome to TuneSphere
-        </Typography>
-        <Typography variant="h5" color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
-          Decentralized. Immersive. Limitless Music.
-        </Typography>
-        <p style={{ fontSize: '1.2rem', margin: '0 0 20px 0', opacity: 0.9 }}>
-          The decentralized music platform built on Internet Computer
-        </p>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-          <div style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '5px' }}>
-            <strong>🎵 Upload & Share</strong>
+        <h2 style={{
+          fontWeight: 900,
+          fontSize: '2.2rem',
+          margin: 0,
+          background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: 1,
+          textShadow: '0 2px 8px #42a5f5',
+        }}>Welcome to TuneSphere</h2>
+        <p style={{ fontSize: '1.1rem', margin: '16px 0 0 0', color: '#b3b3ff' }}>Decentralized. Immersive. Limitless Music.</p>
+        <p style={{ fontSize: '1.1rem', margin: '8px 0 0 0', color: '#b3b3ff' }}>The decentralized music platform built on Internet Computer</p>
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: 16 }}>
+          <div style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '5px', fontWeight: 700, color: '#fff' }}>
+            🎵 Upload & Share
           </div>
-          <div style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '5px' }}>
-            <strong>💰 Earn Royalties</strong>
+          <div style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '5px', fontWeight: 700, color: '#fff' }}>
+            💰 Earn Royalties
           </div>
-          <div style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '5px' }}>
-            <strong>🤝 Collaborate</strong>
+          <div style={{ background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '5px', fontWeight: 700, color: '#fff' }}>
+            🤝 Collaborate
           </div>
         </div>
       </div>

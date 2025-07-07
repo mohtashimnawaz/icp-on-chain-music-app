@@ -367,12 +367,29 @@ const MusicPlayer3D: React.FC = () => {
         right: 20,
         zIndex: 1000,
         color: 'white',
-        fontFamily: 'Arial, sans-serif',
-        textAlign: 'right'
+        fontFamily: 'Poppins, Arial, sans-serif',
+        background: 'rgba(34,34,54,0.85)',
+        borderRadius: '18px',
+        boxShadow: '0 4px 32px 0 rgba(123,31,162,0.18)',
+        padding: '32px 40px',
+        minWidth: '320px',
+        maxWidth: '90vw',
+        backdropFilter: 'blur(12px)',
+        border: '2px solid #7b1fa2',
+        textAlign: 'right',
       }}>
-        <h2>3D Music Player</h2>
-        <p>Use mouse to rotate, scroll to zoom</p>
-        <p>Volume: {volume}%</p>
+        <h2 style={{
+          fontWeight: 900,
+          fontSize: '2.2rem',
+          margin: 0,
+          background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: 1,
+          textShadow: '0 2px 8px #42a5f5',
+        }}>3D Music Player</h2>
+        <p style={{ fontSize: '1.1rem', margin: '16px 0 0 0', color: '#b3b3ff' }}>Use mouse to rotate, scroll to zoom</p>
+        <p style={{ fontSize: '1.1rem', margin: '8px 0 0 0', color: '#b3b3ff' }}>Volume: {volume}%</p>
       </div>
     </div>
   );
