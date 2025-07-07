@@ -203,19 +203,40 @@ const MusicVisualizer3D: React.FC = () => {
         left: 20,
         zIndex: 1000,
         color: 'white',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Poppins, Arial, sans-serif',
+        background: 'rgba(34,34,54,0.85)',
+        borderRadius: '18px',
+        boxShadow: '0 4px 32px 0 rgba(123,31,162,0.18)',
+        padding: '32px 40px',
+        minWidth: '320px',
+        maxWidth: '90vw',
+        backdropFilter: 'blur(12px)',
+        border: '2px solid #7b1fa2',
       }}>
-        <h2>3D Music Visualizer</h2>
+        <h2 style={{
+          fontWeight: 900,
+          fontSize: '2.2rem',
+          margin: 0,
+          background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: 1,
+          textShadow: '0 2px 8px #42a5f5',
+        }}>3D Music Visualizer</h2>
         <button 
           onClick={() => setIsPlaying(!isPlaying)}
           style={{
-            padding: '10px 20px',
-            background: isPlaying ? '#ff4444' : '#44ff44',
+            marginTop: '24px',
+            padding: '12px 32px',
+            background: isPlaying ? 'linear-gradient(90deg, #ff4444, #7b1fa2)' : 'linear-gradient(90deg, #44ff44, #00e5ff)',
             color: 'white',
             border: 'none',
-            borderRadius: '5px',
+            borderRadius: '8px',
             cursor: 'pointer',
-            fontSize: '16px'
+            fontSize: '1.2rem',
+            fontWeight: 700,
+            boxShadow: '0 2px 8px #42a5f5',
+            transition: 'all 0.2s',
           }}
         >
           {isPlaying ? 'Stop' : 'Play'}

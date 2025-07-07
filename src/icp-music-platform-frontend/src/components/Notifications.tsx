@@ -98,18 +98,44 @@ const Notifications: React.FC = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <NotificationsIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
-          <Typography variant="h4">
-            Notifications
-          </Typography>
-          {unreadCount > 0 && (
-            <Chip 
-              label={unreadCount} 
-              color="error" 
-              size="small" 
-              sx={{ ml: 2 }}
-            />
-          )}
+          <Card sx={{
+            background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientMove 8s ease-in-out infinite',
+            boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+            borderRadius: 4,
+            transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+            '&:hover': {
+              transform: 'translateY(-4px) scale(1.04)',
+              boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+            },
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <NotificationsIcon sx={{ fontSize: 32, color: '#fff', filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+                <Typography variant="h6" sx={{
+                  background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: 800,
+                  letterSpacing: 1,
+                  textShadow: '0 2px 8px #42a5f5',
+                  ml: 1
+                }}>
+                  Notifications
+                </Typography>
+              </Box>
+              {unreadCount > 0 && (
+                <Chip 
+                  label={unreadCount} 
+                  color="error" 
+                  size="small" 
+                  sx={{ ml: 2 }}
+                />
+              )}
+            </CardContent>
+          </Card>
         </Box>
         {unreadCount > 0 && (
           <Button
@@ -136,12 +162,15 @@ const Notifications: React.FC = () => {
             <Card 
               key={i} 
               sx={{ 
-                transition: 'all 0.2s ease-in-out',
-                border: notification.read ? '1px solid #e0e0e0' : '2px solid #1976d2',
-                backgroundColor: notification.read ? 'background.paper' : 'rgba(25, 118, 210, 0.04)',
+                background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+                backgroundSize: '200% 200%',
+                animation: 'gradientMove 8s ease-in-out infinite',
+                boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+                borderRadius: 4,
+                transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
                 '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: 3
+                  transform: 'translateY(-4px) scale(1.04)',
+                  boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
                 }
               }}
             >

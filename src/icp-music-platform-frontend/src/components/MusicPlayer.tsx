@@ -207,8 +207,34 @@ const MusicPlayer: React.FC = () => {
 
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3 }}>
         {/* Main Player */}
-        <Card sx={{ flex: { xs: '1', lg: '0 0 400px' }, height: 'fit-content' }}>
+        <Card sx={{
+          background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+          backgroundSize: '200% 200%',
+          animation: 'gradientMove 8s ease-in-out infinite',
+          boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+          borderRadius: 4,
+          transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+          '&:hover': {
+            transform: 'translateY(-4px) scale(1.04)',
+            boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+          },
+        }}>
           <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <MusicNoteIcon sx={{ fontSize: 32, color: '#fff', filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+              <Typography variant="h6" sx={{
+                background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 800,
+                letterSpacing: 1,
+                textShadow: '0 2px 8px #42a5f5',
+                ml: 1
+              }}>
+                Now Playing
+              </Typography>
+            </Box>
             {/* Album Cover */}
             <Box sx={{ textAlign: 'center', mb: 3 }}>
               <Box
@@ -283,7 +309,7 @@ const MusicPlayer: React.FC = () => {
               </IconButton>
             </Box>
 
-            {/* Volume Control */}
+            {/* Volume Controls */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <IconButton onClick={toggleMute}>
                 {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}

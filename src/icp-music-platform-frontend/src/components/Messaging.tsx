@@ -212,11 +212,37 @@ const Messaging: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', height: 'calc(100vh - 120px)', p: 2 }}>
       {/* Sidebar: Conversation List */}
-      <Card sx={{ width: 320, mr: 2, display: 'flex', flexDirection: 'column' }}>
-        <CardContent sx={{ pb: 1 }}>
+      <Card sx={{
+        background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+        backgroundSize: '200% 200%',
+        animation: 'gradientMove 8s ease-in-out infinite',
+        boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+        borderRadius: 4,
+        transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+        '&:hover': {
+          transform: 'translateY(-4px) scale(1.04)',
+          boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+        },
+        width: 320,
+        mr: 2,
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <ChatIcon sx={{ mr: 1, color: 'primary.main' }} />
-            <Typography variant="h6">Conversations</Typography>
+            <MessageIcon sx={{ fontSize: 32, color: '#fff', filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+            <Typography variant="h6" sx={{
+              background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 800,
+              letterSpacing: 1,
+              textShadow: '0 2px 8px #42a5f5',
+              ml: 1
+            }}>
+              Messaging
+            </Typography>
           </Box>
           
           {/* New Conversation Input */}
