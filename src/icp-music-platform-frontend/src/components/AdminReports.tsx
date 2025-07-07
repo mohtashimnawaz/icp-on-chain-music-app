@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { listReports, reviewReport } from '../services/musicService';
 import type { Report, ReportStatus } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import ReportIcon from '@mui/icons-material/Report';
 
 const STATUS_OPTIONS: { label: string; value: ReportStatus }[] = [
   { label: 'Pending', value: { Pending: null } },
@@ -50,8 +55,41 @@ const AdminReports: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Admin: Reports Moderation</h2>
+    <Box sx={{ p: 4, maxWidth: 900, mx: 'auto' }}>
+      <Card sx={{
+        background: 'linear-gradient(135deg, #7b1fa2 0%, #42a5f5 100%)',
+        backgroundSize: '200% 200%',
+        animation: 'gradientMove 8s ease-in-out infinite',
+        boxShadow: '0 8px 32px 0 rgba(123,31,162,0.18)',
+        borderRadius: 4,
+        transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)',
+        '&:hover': {
+          transform: 'translateY(-4px) scale(1.04)',
+          boxShadow: '0 16px 48px 0 rgba(123,31,162,0.22)',
+        },
+        mb: 4
+      }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <ReportIcon sx={{ fontSize: 40, color: '#fff', filter: 'drop-shadow(0 2px 8px #42a5f5)' }} />
+            <Typography variant="h4" sx={{
+              background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 900,
+              letterSpacing: 1,
+              textShadow: '0 2px 8px #42a5f5',
+              ml: 2
+            }}>
+              Admin Reports
+            </Typography>
+          </Box>
+          <Typography variant="h6" sx={{ color: '#fff', mb: 2 }}>
+            Review and manage all user reports in a beautiful, immersive admin panel.
+          </Typography>
+        </CardContent>
+      </Card>
       {loading && <div>Loading reports...</div>}
       {error && <div style={{ color: 'red' }}>{error}</div>}
       {success && <div style={{ color: 'green' }}>{success}</div>}
@@ -93,7 +131,7 @@ const AdminReports: React.FC = () => {
         </tbody>
       </table>
       {reports.length === 0 && !loading && <div>No reports found.</div>}
-    </div>
+    </Box>
   );
 };
 
