@@ -237,10 +237,10 @@ const TrackList: React.FC = () => {
   };
 
   const handleSubmitReport = async (reason: string, details: string) => {
-    if (!reportTrackId || typeof reportTrackId !== 'string' || isNaN(Number(reportTrackId))) return;
     setReportError('');
     try {
-      await reportContent({ Track: BigInt(reportTrackId) }, reason, details);
+      if (!reportTrackId) throw new Error('No track selected for report.');
+      await reportContent({ Track: null }, reportTrackId, reason, details);
       setReportOpen(false);
       setReportTrackId(null);
       showMessage('Report submitted. Thank you!', 'success');
@@ -483,7 +483,10 @@ const TrackList: React.FC = () => {
       ) : (
         <List>
           {tracks.map((track, idx) => {
+            if (!track || !track.id) return null;
             const licObj = license && license[track.id.toString()] ? license[track.id.toString()] : undefined;
+            const title = track.title ?? 'Untitled';
+            const description = track.description ?? '';
             return (
               <Card 
                 key={idx}
@@ -515,17 +518,17 @@ const TrackList: React.FC = () => {
                       letterSpacing: 1,
                       textShadow: '0 2px 8px #42a5f5',
                     }}>
-                      {track.title}
+                      {title}
                     </Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {track.description}
+                    {description}
                   </Typography>
                   <Button
                     variant="contained"
                     startIcon={<PlayArrowIcon />}
                     sx={{ borderRadius: 2, fontWeight: 700 }}
-                    onClick={() => handleDownload(track.id, track.title)}
+                    onClick={() => track.id && title && handleDownload(track.id, title)}
                   >
                     Download
                   </Button>
