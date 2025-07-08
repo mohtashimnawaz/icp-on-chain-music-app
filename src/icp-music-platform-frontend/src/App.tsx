@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Link as RouterLink } from 'react-router-dom';
+import { Routes, Route, Link as RouterLink, useLocation } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import MusicStudio from './components/MusicStudio';
 import TrackList from './components/TrackList';
@@ -200,12 +200,37 @@ const vibrantGradients = {
   purple: 'linear-gradient(90deg, #7b1fa2 0%, #9c27b0 100%)',
 };
 
+const videoFiles = [
+  '/studio-1.mp4',
+  '/studio-2.mp4',
+  '/studio-3.mp4',
+  '/studio-4.mp4',
+  '/studio-5.mp4',
+  '/studio-6.mp4',
+];
+
 const App: React.FC = () => {
   const { isAuthenticated, principal, login, logout, isLoading, walletType } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mode, setMode] = useState<'light' | 'dark'>('dark');
+  const location = useLocation();
+  const [currentVideo, setCurrentVideo] = useState(0);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  // Only run video background on home page
+  const isHome = location.pathname === '/';
+
+  // Cycle to next video on end
+  const handleVideoEnd = () => {
+    setCurrentVideo((prev) => (prev + 1) % videoFiles.length);
+  };
+
+  // Reset to first video if leaving home
+  useEffect(() => {
+    if (!isHome) setCurrentVideo(0);
+  }, [isHome]);
 
   // Load theme preference from localStorage
   useEffect(() => {
@@ -348,7 +373,48 @@ const App: React.FC = () => {
       </style>
       <LoadingProvider>
         <SnackbarProvider>
-          <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', color: 'text.primary' }}>
+          {/* Video background for home page */}
+          {isHome && (
+            <>
+              <video
+                ref={videoRef}
+                key={currentVideo} // force reload on video change
+                src={videoFiles[currentVideo]}
+                autoPlay
+                muted
+                loop={false}
+                onEnded={handleVideoEnd}
+                playsInline
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100vw',
+                  height: '100vh',
+                  objectFit: 'cover',
+                  zIndex: 0,
+                  filter: 'brightness(0.18) blur(1.5px)',
+                  pointerEvents: 'none',
+                  transition: 'opacity 0.7s',
+                }}
+              />
+              {/* Overlay for readability */}
+              <Box
+                sx={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100vw',
+                  height: '100vh',
+                  zIndex: 1,
+                  background: 'rgba(24, 18, 43, 0.65)',
+                  pointerEvents: 'none',
+                }}
+              />
+            </>
+          )}
+          {/* Main app content overlays video and overlay */}
+          <Box sx={{ minHeight: '100vh', bgcolor: isHome ? 'transparent' : 'background.default', color: 'text.primary', position: 'relative', zIndex: 2 }}>
           <AppBar position="static" color="transparent" elevation={0} sx={{
             background: 'linear-gradient(90deg, rgba(34,34,34,0.95) 60%, rgba(25,118,210,0.7) 100%)',
             backdropFilter: 'blur(16px)',
