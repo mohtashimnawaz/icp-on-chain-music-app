@@ -446,74 +446,142 @@ const App: React.FC = () => {
                 <img src={TuneSphereLogo} alt="TuneSphere Logo" style={{ height: 36, marginRight: 10, verticalAlign: 'middle' }} />
                 TuneSphere
               </Typography>
-              <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, gap: 2, alignItems: 'center' }}>
-                {/* Main Navigation */}
-                {[{
-                  label: 'Home', icon: <HomeIcon />, to: '/'
-                }, {
-                  label: 'Dashboard', icon: <DashboardIcon />, to: '/dashboard'
-                }, {
-                  label: 'Tracks', icon: <MusicNoteIcon />, to: '/tracks'
-                }, {
-                  label: 'Playlists', icon: <QueueMusicIcon />, to: '/playlists'
-                }, {
-                  label: 'Upload', icon: <CloudUploadIcon />, to: '/upload'
-                }, {
-                  label: 'Player', icon: <PlayArrowIcon />, to: '/player'
-                }, {
-                  label: '3D Home', icon: <ViewInArIcon />, to: '/home-3d', badge: 'NEW'
-                }, {
-                  label: 'Notifications', icon: <NotificationsIcon />, to: '/notifications', badge: unreadCount > 0 ? unreadCount : null
-                }].map((item, idx) => (
-                  <Button
-                    key={item.label}
-                    color="inherit"
-                    component={RouterLink}
-                    to={item.to}
-                    startIcon={item.icon}
-                    sx={{
-                      fontWeight: 600,
-                      letterSpacing: 1,
-                      px: 2.2,
-                      py: 1.2,
-                      borderRadius: 2,
-                      fontSize: '1.08rem',
-                      background: 'rgba(255,255,255,0.01)',
-                      boxShadow: '0 1px 4px 0 rgba(25,118,210,0.04)',
-                      transition: 'all 0.18s',
-                      position: 'relative',
-                      '&:hover': {
-                        background: 'rgba(25,118,210,0.13)',
-                        color: 'primary.main',
-                        transform: 'translateY(-2px) scale(1.04)',
-                        boxShadow: '0 4px 16px 0 rgba(25,118,210,0.10)',
-                        textDecoration: 'underline',
-                      },
-                      ...(item.label === '3D Home' && {
-                        color: 'white',
-                        fontWeight: 700,
-                        textShadow: '0 2px 8px #1976d2',
-                      })
-                    }}
-                  >
-                    {item.label}
-                    {item.badge && (
-                      <Chip
-                        label={item.badge}
-                        size="small"
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  display: { xs: 'none', md: 'block' },
+                  overflowX: 'scroll',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '80vw',
+                  minWidth: 0,
+                  scrollbarColor: '#7b1fa2 #231942',
+                  scrollbarWidth: 'thin',
+                  '&::-webkit-scrollbar': {
+                    height: 10,
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    background: '#7b1fa2',
+                    borderRadius: 4,
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    background: '#231942',
+                  },
+                  py: 0.5,
+                  px: 0,
+                }}
+              >
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 'max-content' }}>
+                  {/* Render all nav sections and items, grouped with section labels */}
+                  {navCategories.map((section) => (
+                    <Box key={section.title} sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, ml: 2 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main', mr: 1, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                        {section.title}
+                      </Typography>
+                      {section.items.map((item) => (
+                        <Button
+                          key={item.label}
+                          color="inherit"
+                          component={RouterLink}
+                          to={item.to}
+                          startIcon={item.icon}
+                          sx={{
+                            fontWeight: 600,
+                            letterSpacing: 1,
+                            px: 2.2,
+                            py: 1.2,
+                            borderRadius: 2,
+                            fontSize: '1.08rem',
+                            background: 'rgba(255,255,255,0.01)',
+                            boxShadow: '0 1px 4px 0 rgba(25,118,210,0.04)',
+                            transition: 'all 0.18s',
+                            position: 'relative',
+                            whiteSpace: 'nowrap',
+                            '&:hover': {
+                              background: 'rgba(25,118,210,0.13)',
+                              color: 'primary.main',
+                              transform: 'translateY(-2px) scale(1.04)',
+                              boxShadow: '0 4px 16px 0 rgba(25,118,210,0.10)',
+                              textDecoration: 'underline',
+                            },
+                            ...(item.label === '3D Home' && {
+                              color: 'white',
+                              fontWeight: 700,
+                              textShadow: '0 2px 8px #1976d2',
+                            })
+                          }}
+                        >
+                          {item.label}
+                          {item.label === 'Notifications' && unreadCount > 0 ? (
+                            <Chip
+                              label={unreadCount}
+                              size="small"
+                              sx={{
+                                ml: 1,
+                                height: 18,
+                                fontSize: '0.7rem',
+                                backgroundColor: 'error.main',
+                                color: 'white',
+                                fontWeight: 700,
+                                letterSpacing: 0.5
+                              }}
+                            />
+                          ) : item.badge && (
+                            <Chip
+                              label={item.badge}
+                              size="small"
+                              sx={{
+                                ml: 1,
+                                height: 18,
+                                fontSize: '0.7rem',
+                                backgroundColor: 'success.main',
+                                color: 'white',
+                                fontWeight: 700,
+                                letterSpacing: 0.5
+                              }}
+                            />
+                          )}
+                        </Button>
+                      ))}
+                    </Box>
+                  ))}
+                  {/* Admin section in AppBar */}
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, ml: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'error.main', mr: 1, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                      ADMIN
+                    </Typography>
+                    {adminLinks.map((link) => (
+                      <Button
+                        key={link.label}
+                        color="inherit"
+                        component={RouterLink}
+                        to={link.to}
+                        startIcon={link.icon}
                         sx={{
-                          ml: 1,
-                          height: 18,
-                          fontSize: '0.7rem',
-                          backgroundColor: item.label === 'Notifications' ? 'error.main' : 'success.main',
-                          color: 'white',
-                          fontWeight: 700,
-                          letterSpacing: 0.5
+                          fontWeight: 600,
+                          letterSpacing: 1,
+                          px: 2.2,
+                          py: 1.2,
+                          borderRadius: 2,
+                          fontSize: '1.08rem',
+                          background: 'rgba(255,255,255,0.01)',
+                          boxShadow: '0 1px 4px 0 rgba(25,118,210,0.04)',
+                          transition: 'all 0.18s',
+                          position: 'relative',
+                          whiteSpace: 'nowrap',
+                          '&:hover': {
+                            background: 'rgba(25,118,210,0.13)',
+                            color: 'primary.main',
+                            transform: 'translateY(-2px) scale(1.04)',
+                            boxShadow: '0 4px 16px 0 rgba(25,118,210,0.10)',
+                            textDecoration: 'underline',
+                          },
                         }}
-                      />
-                    )}
-                  </Button>
-                ))}
+                      >
+                        {link.label}
+                      </Button>
+                    ))}
+                  </Box>
+                </Box>
               </Box>
               {/* Divider between menu and right controls */}
               <Box sx={{ height: 40, width: 1, bgcolor: 'rgba(255,255,255,0.08)', mx: 2, display: { xs: 'none', md: 'block' } }} />
