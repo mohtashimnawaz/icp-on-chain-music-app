@@ -375,8 +375,8 @@ const App: React.FC = () => {
       </style>
       <LoadingProvider>
         <SnackbarProvider>
-          {/* Video background for home page */}
-          {isHome && (
+          {/* Video background for all non-3D pages */}
+          {!is3DPage && (
             <video
               ref={videoRef}
               key={currentVideo} // force reload on video change
