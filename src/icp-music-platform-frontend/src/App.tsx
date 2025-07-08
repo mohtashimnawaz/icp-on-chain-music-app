@@ -226,7 +226,14 @@ const App: React.FC = () => {
 
   // Cycle to next video on end
   const handleVideoEnd = () => {
-    setCurrentVideo((prev) => (prev + 1) % videoFiles.length);
+    setCurrentVideo((prev) => {
+      if (prev === videoFiles.length - 1) {
+        // Restart from first video immediately
+        return 0;
+      } else {
+        return prev + 1;
+      }
+    });
   };
 
   // Reset to first video if leaving home
