@@ -221,6 +221,8 @@ const App: React.FC = () => {
 
   // Only run video background on home page
   const isHome = location.pathname === '/';
+  // 3D pages
+  const is3DPage = ['/home-3d', '/visualizer-3d', '/player-3d', '/studio-3d'].includes(location.pathname);
 
   // Cycle to next video on end
   const handleVideoEnd = () => {
@@ -375,46 +377,46 @@ const App: React.FC = () => {
         <SnackbarProvider>
           {/* Video background for home page */}
           {isHome && (
-            <>
-              <video
-                ref={videoRef}
-                key={currentVideo} // force reload on video change
-                src={videoFiles[currentVideo]}
-                autoPlay
-                muted
-                loop={false}
-                onEnded={handleVideoEnd}
-                playsInline
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: '100vw',
-                  height: '100vh',
-                  objectFit: 'cover',
-                  zIndex: 0,
-                  filter: 'brightness(0.18) blur(1.5px)',
-                  pointerEvents: 'none',
-                  transition: 'opacity 0.7s',
-                }}
-              />
-              {/* Overlay for readability */}
-              <Box
-                sx={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: '100vw',
-                  height: '100vh',
-                  zIndex: 1,
-                  background: 'rgba(24, 18, 43, 0.65)',
-                  pointerEvents: 'none',
-                }}
-              />
-            </>
+            <video
+              ref={videoRef}
+              key={currentVideo} // force reload on video change
+              src={videoFiles[currentVideo]}
+              autoPlay
+              muted
+              loop={false}
+              onEnded={handleVideoEnd}
+              playsInline
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                objectFit: 'cover',
+                zIndex: 0,
+                filter: 'brightness(0.18) blur(1.5px)',
+                pointerEvents: 'none',
+                transition: 'opacity 0.7s',
+              }}
+            />
+          )}
+          {/* Overlay for readability on all non-3D pages */}
+          {!is3DPage && (
+            <Box
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                zIndex: 1,
+                background: 'rgba(24, 18, 43, 0.82)', // more opaque
+                pointerEvents: 'none',
+              }}
+            />
           )}
           {/* Main app content overlays video and overlay */}
-          <Box sx={{ minHeight: '100vh', bgcolor: isHome ? 'transparent' : 'background.default', color: 'text.primary', position: 'relative', zIndex: 2 }}>
+          <Box sx={{ minHeight: '100vh', bgcolor: isHome || !is3DPage ? 'transparent' : 'background.default', color: 'text.primary', position: 'relative', zIndex: 2 }}>
           <AppBar position="static" color="transparent" elevation={0} sx={{
             background: 'linear-gradient(90deg, rgba(34,34,34,0.95) 60%, rgba(25,118,210,0.7) 100%)',
             backdropFilter: 'blur(16px)',
