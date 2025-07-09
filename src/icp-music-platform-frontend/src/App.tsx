@@ -88,10 +88,7 @@ const Home = () => (
   <Box sx={{ p: 4, textAlign: 'center' }}>
     <Box sx={{ mb: 6 }}>
       <Typography variant="h2" gutterBottom sx={{ 
-        background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
-        backgroundClip: 'text',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
+        color: '#fff',
         fontWeight: 'bold'
       }}>
         Welcome to TuneSphere
@@ -401,7 +398,7 @@ const App: React.FC = () => {
                 height: '100vh',
                 objectFit: 'cover',
                 zIndex: 0,
-                filter: 'brightness(0.18) blur(1.5px)',
+                filter: 'brightness(0.18)', // removed blur(1.5px)
                 pointerEvents: 'none',
                 transition: 'opacity 0.7s',
               }}
@@ -506,7 +503,6 @@ const App: React.FC = () => {
                             ...(item.label === '3D Home' && {
                               color: 'white',
                               fontWeight: 700,
-                              textShadow: '0 2px 8px #1976d2',
                             })
                           }}
                         >

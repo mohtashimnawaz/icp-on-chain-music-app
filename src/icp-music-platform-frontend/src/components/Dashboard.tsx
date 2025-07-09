@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 4, color: '#fff', fontWeight: 900, letterSpacing: 1 }}>
         Dashboard
       </Typography>
       

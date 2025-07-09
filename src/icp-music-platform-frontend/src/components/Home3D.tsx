@@ -350,12 +350,11 @@ const Home3D: React.FC = () => {
           fontWeight: 900,
           fontSize: '2.2rem',
           margin: 0,
-          background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          color: '#fff',
           letterSpacing: 1,
-          textShadow: '0 2px 8px #42a5f5',
-        }}>Welcome to TuneSphere</h2>
+        }}>
+          Welcome to TuneSphere
+        </h2>
         <p style={{ fontSize: '1.1rem', margin: '16px 0 0 0', color: '#b3b3ff' }}>Decentralized. Immersive. Limitless Music.</p>
         <p style={{ fontSize: '1.1rem', margin: '8px 0 0 0', color: '#b3b3ff' }}>The decentralized music platform built on Internet Computer</p>
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: 16 }}>

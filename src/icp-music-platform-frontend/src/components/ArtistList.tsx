@@ -94,13 +94,9 @@ const ArtistList: React.FC = () => {
                     <PersonIcon />
                   </Avatar>
                   <Typography variant="h6" component="div" sx={{
-                    background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
+                    color: '#fff',
                     fontWeight: 800,
                     letterSpacing: 1,
-                    textShadow: '0 2px 8px #42a5f5',
                   }}>
                     {artist.name}
                   </Typography>

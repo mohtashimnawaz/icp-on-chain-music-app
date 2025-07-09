@@ -217,12 +217,11 @@ const MusicVisualizer3D: React.FC = () => {
           fontWeight: 900,
           fontSize: '2.2rem',
           margin: 0,
-          background: 'linear-gradient(90deg, #fff, #00e5ff, #7b1fa2)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          color: '#fff',
           letterSpacing: 1,
-          textShadow: '0 2px 8px #42a5f5',
-        }}>3D Music Visualizer</h2>
+        }}>
+          3D Music Visualizer
+        </h2>
         <button 
           onClick={() => setIsPlaying(!isPlaying)}
           style={{
