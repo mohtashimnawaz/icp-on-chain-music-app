@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { plugWalletService } from '../services/plugWallet';
+import { icpService } from '../services/icp';
 
 type WalletType = 'internet-identity' | 'plug' | null;
 
@@ -27,44 +28,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [principal, setPrincipal] = useState<string | null>(null);
   const [walletType, setWalletType] = useState<WalletType>(null);
 
-  // Placeholder: Replace with real Internet Identity logic
+  // Initialize auth services
   useEffect(() => {
-    setIsAuthenticated(false);
-    setPrincipal(null);
-    setWalletType(null);
+    const initAuth = async () => {
+      try {
+        // Initialize ICP service
+        await icpService.init();
+        
+        // Check if user is already authenticated with Internet Identity
+        const isAuthenticated = await icpService.getIsAuthenticated();
+        if (isAuthenticated) {
+          setIsAuthenticated(true);
+          setPrincipal(icpService.getPrincipal());
+          setWalletType('internet-identity');
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+      }
+    };
+
+    initAuth();
   }, []);
 
   const login = async (wallet: WalletType) => {
     setIsLoading(true);
-    if (wallet === 'plug') {
-      const success = await plugWalletService.connect();
-      if (success) {
-        setIsAuthenticated(true);
-        setPrincipal(plugWalletService.getPrincipal() || null);
-        setWalletType('plug');
+    try {
+      if (wallet === 'plug') {
+        const success = await plugWalletService.connect();
+        if (success) {
+          setIsAuthenticated(true);
+          setPrincipal(plugWalletService.getPrincipal() || null);
+          setWalletType('plug');
+        }
+      } else if (wallet === 'internet-identity') {
+        const success = await icpService.login();
+        if (success) {
+          setIsAuthenticated(true);
+          setPrincipal(icpService.getPrincipal());
+          setWalletType('internet-identity');
+        }
       }
-    } else if (wallet === 'internet-identity') {
-      // TODO: Integrate real Internet Identity login
-      setTimeout(() => {
-        setIsAuthenticated(true);
-        setPrincipal('mock-principal');
-        setWalletType('internet-identity');
-        setIsLoading(false);
-      }, 1000);
-      return;
+    } catch (error) {
+      console.error('Login failed:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const logout = async () => {
     setIsLoading(true);
-    if (walletType === 'plug') {
-      await plugWalletService.disconnect();
+    try {
+      if (walletType === 'plug') {
+        await plugWalletService.disconnect();
+      } else if (walletType === 'internet-identity') {
+        await icpService.logout();
+      }
+      
+      setIsAuthenticated(false);
+      setPrincipal(null);
+      setWalletType(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsAuthenticated(false);
-    setPrincipal(null);
-    setWalletType(null);
-    setIsLoading(false);
   };
 
   return (
