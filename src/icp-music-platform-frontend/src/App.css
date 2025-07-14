@@ -1,3 +1,8 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
 /* CSS Custom Properties for theme support */
 :root {
   --primary-text-color: #fff;
@@ -11,6 +16,9 @@
   --particle-color: rgba(255, 255, 255, 0.8);
   --neon-base-color: #fff;
   --neon-accent-color: #ff6b6b;
+  --video-brightness: 0.35;
+  --video-contrast: 1.2;
+  --video-saturation: 1.1;
 }
 
 /* Light theme variables */
@@ -26,15 +34,24 @@
   --particle-color: rgba(0, 0, 0, 0.3);
   --neon-base-color: #18122B;
   --neon-accent-color: #7b1fa2;
+  --video-brightness: 0.45;
+  --video-contrast: 1.1;
+  --video-saturation: 1.0;
 }
 
 body {
   margin: 0;
-  font-family: 'Poppins', system-ui, sans-serif;
+  font-family: 'Inter', 'Poppins', system-ui, -apple-system, sans-serif;
   background: var(--background-gradient);
   background-size: 200% 200%;
   animation: gradientMove 16s ease-in-out infinite;
   color: var(--primary-text-color);
+  font-weight: 400;
+  line-height: 1.6;
+  font-feature-settings: 'kern' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -180,21 +197,67 @@ body {
   transform: rotateY(10deg) rotateX(5deg);
 }
 
-/* Navigation enhancements */
+/* Modern Navigation enhancements */
 nav {
   background: var(--nav-background);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: var(--nav-text-color);
   font-size: 1.1rem;
+  font-family: 'Inter', 'Poppins', system-ui, sans-serif;
+  font-weight: 500;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.1);
+}
+
+.modern-nav-button {
+  position: relative;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: 'Inter', 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modern-nav-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modern-nav-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modern-nav-button:hover::before {
+  opacity: 1;
 }
 
 nav a {
   color: var(--nav-link-color);
   text-decoration: none;
   margin-right: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  font-weight: 500;
+  font-family: 'Inter', 'Poppins', system-ui, sans-serif;
 }
 
 nav a::after {
@@ -204,8 +267,9 @@ nav a::after {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
 }
 
 nav a:hover::after {
@@ -215,6 +279,7 @@ nav a:hover::after {
 nav a:hover {
   color: var(--nav-text-color);
   transform: translateY(-2px);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 button {
@@ -307,9 +372,102 @@ button:disabled {
 .glass-card {
   background: var(--glass-card-background);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+  pointer-events: none;
+}
+
+/* Enhanced video background effects */
+.video-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 0;
+  filter: brightness(var(--video-brightness)) contrast(var(--video-contrast)) saturate(var(--video-saturation));
+  transition: all 0.5s ease-in-out;
+}
+
+.video-background:hover {
+  filter: brightness(calc(var(--video-brightness) + 0.1)) contrast(calc(var(--video-contrast) + 0.1)) saturate(calc(var(--video-saturation) + 0.1));
+}
+
+/* Modern gradient text animation */
+@keyframes modernGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Modern Navbar */
+.modern-navbar {
+  background: linear-gradient(135deg, rgba(34,34,54,0.95) 0%, rgba(25,118,210,0.15) 50%, rgba(123,31,162,0.25) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 
+    0 8px 32px rgba(0,0,0,0.12),
+    0 0 0 1px rgba(255,255,255,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.modern-navbar-logo {
+  font-family: 'Inter', 'Poppins', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 200%;
+  animation: gradient 10s ease infinite;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.modern-navbar-logo:hover {
+  transform: scale(1.05);
 }
 
 /* Neon effects */

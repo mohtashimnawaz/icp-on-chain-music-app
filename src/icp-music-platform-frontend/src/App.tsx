@@ -324,14 +324,16 @@ const App: React.FC = () => {
       },
     },
     typography: {
-      fontFamily: 'Poppins, system-ui, sans-serif',
-      h1: { fontWeight: 900, letterSpacing: 1 },
-      h2: { fontWeight: 800, letterSpacing: 1 },
-      h3: { fontWeight: 700 },
-      h4: { fontWeight: 700 },
-      h5: { fontWeight: 600 },
-      h6: { fontWeight: 600 },
-      button: { fontWeight: 700, letterSpacing: 1 },
+      fontFamily: 'Inter, Poppins, system-ui, -apple-system, sans-serif',
+      h1: { fontWeight: 900, letterSpacing: '0.5px', fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      h2: { fontWeight: 800, letterSpacing: '0.5px', fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      h3: { fontWeight: 700, letterSpacing: '0.25px', fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      h4: { fontWeight: 700, letterSpacing: '0.25px', fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      h5: { fontWeight: 600, letterSpacing: '0.1px', fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      h6: { fontWeight: 600, letterSpacing: '0.1px', fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      button: { fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      body1: { fontWeight: 400, lineHeight: 1.6, fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
+      body2: { fontWeight: 400, lineHeight: 1.5, fontFamily: 'Inter, Poppins, system-ui, sans-serif' },
     },
     components: {
       MuiAppBar: {
@@ -450,9 +452,9 @@ const App: React.FC = () => {
                 height: '100vh',
                 objectFit: 'cover',
                 zIndex: 0,
-                filter: 'brightness(0.18)', // removed blur(1.5px)
+                filter: `brightness(var(--video-brightness)) contrast(var(--video-contrast)) saturate(var(--video-saturation))`,
                 pointerEvents: 'none',
-                transition: 'opacity 0.7s',
+                transition: 'opacity 0.7s ease-in-out, filter 0.3s ease-in-out',
               }}
             />
           )}
@@ -466,57 +468,120 @@ const App: React.FC = () => {
                 width: '100vw',
                 height: '100vh',
                 zIndex: 1,
-                background: 'rgba(24, 18, 43, 0.82)', // more opaque
+                background: mode === 'dark' 
+                  ? 'rgba(24, 18, 43, 0.65)' 
+                  : 'rgba(255, 255, 255, 0.25)',
                 pointerEvents: 'none',
+                transition: 'background 0.3s ease-in-out',
               }}
             />
           )}
           {/* Main app content overlays video and overlay */}
           <Box sx={{ minHeight: '100vh', bgcolor: isHome || !is3DPage ? 'transparent' : 'background.default', color: 'text.primary', position: 'relative', zIndex: 2 }}>
           <AppBar position="static" color="transparent" elevation={0} sx={{
-            background: 'linear-gradient(90deg, rgba(34,34,34,0.95) 60%, rgba(25,118,210,0.7) 100%)',
-            backdropFilter: 'blur(16px)',
-            boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12)',
-            borderBottom: '1.5px solid #222',
+            background: mode === 'dark' 
+              ? 'linear-gradient(135deg, rgba(34,34,54,0.95) 0%, rgba(25,118,210,0.15) 50%, rgba(123,31,162,0.25) 100%)'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(25,118,210,0.08) 50%, rgba(123,31,162,0.12) 100%)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.05), transparent, rgba(255,255,255,0.05))',
+              pointerEvents: 'none',
+            }
           }}>
             <Toolbar sx={{
               display: 'flex',
               flexWrap: 'wrap',
-              minHeight: 72,
-              px: { xs: 1, md: 4 },
-              py: 1,
+              minHeight: 80,
+              px: { xs: 2, md: 4 },
+              py: 1.5,
               alignItems: 'center',
-              gap: 2,
+              gap: 3,
+              position: 'relative',
+              zIndex: 1,
             }}>
               <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2, display: { xs: 'block', md: 'none' } }} onClick={() => setDrawerOpen(true)}>
                 <MenuIcon />
               </IconButton>
-              <Typography variant="h6" sx={{ flexGrow: 0, fontWeight: 700, letterSpacing: 1, mr: 3, display: 'flex', alignItems: 'center' }}>
-                <img src={TuneSphereLogo} alt="TuneSphere Logo" style={{ height: 36, marginRight: 10, verticalAlign: 'middle' }} />
+              <Typography variant="h6" sx={{ 
+                flexGrow: 0, 
+                fontFamily: 'Inter, Poppins, system-ui, sans-serif',
+                fontWeight: 800, 
+                fontSize: '1.5rem',
+                letterSpacing: '0.5px', 
+                mr: 4, 
+                display: 'flex', 
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundSize: '200% 200%',
+                animation: 'gradient 10s ease infinite',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              }}>
+                <img 
+                  src={TuneSphereLogo} 
+                  alt="TuneSphere Logo" 
+                  style={{ 
+                    height: 42, 
+                    marginRight: 12, 
+                    verticalAlign: 'middle',
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                    transition: 'transform 0.3s ease',
+                  }} 
+                  onMouseEnter={(e) => e.target.style.transform = 'rotate(5deg) scale(1.05)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'rotate(0deg) scale(1)'}
+                />
                 TuneSphere
               </Typography>
               <Box
                 sx={{
                   flexGrow: 1,
                   display: { xs: 'none', md: 'block' },
-                  overflowX: 'scroll',
+                  overflowX: 'auto',
                   whiteSpace: 'nowrap',
                   maxWidth: '80vw',
                   minWidth: 0,
-                  scrollbarColor: '#7b1fa2 #231942',
+                  scrollBehavior: 'smooth',
+                  scrollbarColor: mode === 'dark' ? '#7b1fa2 #231942' : '#7b1fa2 #f0f0f0',
                   scrollbarWidth: 'thin',
                   '&::-webkit-scrollbar': {
-                    height: 10,
+                    height: 8,
                   },
                   '&::-webkit-scrollbar-thumb': {
-                    background: '#7b1fa2',
+                    background: 'linear-gradient(90deg, #7b1fa2, #42a5f5)',
                     borderRadius: 4,
+                    '&:hover': {
+                      background: 'linear-gradient(90deg, #9c27b0, #1976d2)',
+                    }
                   },
                   '&::-webkit-scrollbar-track': {
-                    background: '#231942',
+                    background: mode === 'dark' ? '#231942' : '#f0f0f0',
+                    borderRadius: 4,
                   },
-                  py: 0.5,
-                  px: 0,
+                  py: 1,
+                  px: 1,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 20,
+                    background: `linear-gradient(90deg, transparent, ${mode === 'dark' ? 'rgba(34,34,54,0.95)' : 'rgba(255,255,255,0.95)'})`,
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }
                 }}
               >
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 'max-content' }}>
@@ -533,24 +598,48 @@ const App: React.FC = () => {
                           component={RouterLink}
                           to={item.to}
                           startIcon={item.icon}
+                          className="modern-nav-button"
                           sx={{
+                            fontFamily: 'Inter, Poppins, system-ui, sans-serif',
                             fontWeight: 600,
-                            letterSpacing: 1,
-                            px: 2.2,
-                            py: 1.2,
-                            borderRadius: 2,
-                            fontSize: '1.08rem',
-                            background: 'rgba(255,255,255,0.01)',
-                            boxShadow: '0 1px 4px 0 rgba(25,118,210,0.04)',
-                            transition: 'all 0.18s',
+                            letterSpacing: '0.5px',
+                            px: 3,
+                            py: 1.5,
+                            borderRadius: 3,
+                            fontSize: '0.95rem',
+                            background: mode === 'dark' 
+                              ? 'rgba(255,255,255,0.05)' 
+                              : 'rgba(0,0,0,0.05)',
+                            border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                            backdropFilter: 'blur(10px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             position: 'relative',
                             whiteSpace: 'nowrap',
+                            overflow: 'hidden',
                             '&:hover': {
-                              background: 'rgba(25,118,210,0.13)',
-                              color: 'primary.main',
-                              transform: 'translateY(-2px) scale(1.04)',
-                              boxShadow: '0 4px 16px 0 rgba(25,118,210,0.10)',
-                              textDecoration: 'underline',
+                              background: mode === 'dark' 
+                                ? 'rgba(255,255,255,0.12)' 
+                                : 'rgba(0,0,0,0.08)',
+                              borderColor: mode === 'dark' 
+                                ? 'rgba(255,255,255,0.2)' 
+                                : 'rgba(0,0,0,0.15)',
+                              transform: 'translateY(-3px) scale(1.02)',
+                              boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+                            },
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: 'linear-gradient(135deg, rgba(255,255,255,0.1), transparent)',
+                              opacity: 0,
+                              transition: 'opacity 0.3s ease',
+                            },
+                            '&:hover::before': {
+                              opacity: 1,
                             },
                             ...(item.label === '3D Home' && {
                               color: 'white',
