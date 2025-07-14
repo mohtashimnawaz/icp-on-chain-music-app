@@ -261,26 +261,63 @@ const App: React.FC = () => {
   const [mode, setMode] = useState<'light' | 'dark'>('dark');
   const location = useLocation();
   const [currentVideo, setCurrentVideo] = useState(0);
+  const [nextVideo, setNextVideo] = useState(1);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0); // 0 for first video, 1 for second video
   const videoRef = React.useRef<HTMLVideoElement>(null);
+  const videoRef2 = React.useRef<HTMLVideoElement>(null);
 
   // Only run video background on home page
   const isHome = location.pathname === '/';
   // 3D pages
   const is3DPage = ['/home-3d', '/visualizer-3d', '/player-3d', '/studio-3d'].includes(location.pathname);
 
-  // Cycle to next video on end
+  // Seamless video transition system
   const handleVideoEnd = useCallback(() => {
+    console.log(`Video ended, transitioning from ${videoFiles[currentVideo]} to ${videoFiles[(currentVideo + 1) % videoFiles.length]}`);
+    
+    // Switch to the preloaded video
+    setActiveVideoIndex(prev => {
+      const newIndex = prev === 0 ? 1 : 0;
+      console.log(`Switching active video index from ${prev} to ${newIndex}`);
+      return newIndex;
+    });
+    
+    // Update current video to next video
     setCurrentVideo((prev) => {
       const nextIndex = (prev + 1) % videoFiles.length;
-      console.log(`Video ended: ${videoFiles[prev]} -> ${videoFiles[nextIndex]}`);
+      console.log(`Current video index: ${prev} -> ${nextIndex} (${videoFiles[nextIndex]})`);
       return nextIndex;
     });
-  }, []);
+  }, [currentVideo]);
+
+  // Handle seamless video transitions
+  useEffect(() => {
+    const currentRef = activeVideoIndex === 0 ? videoRef : videoRef2;
+    const nextRef = activeVideoIndex === 0 ? videoRef2 : videoRef;
+    
+    if (currentRef.current && nextRef.current) {
+      // Pause the inactive video and play the active one
+      nextRef.current.pause();
+      currentRef.current.currentTime = 0; // Reset to start
+      currentRef.current.play().catch(console.warn);
+      
+      // Preload the next video but don't play it
+      nextRef.current.load();
+    }
+  }, [activeVideoIndex]);
+
+  // Update next video when current video changes
+  useEffect(() => {
+    const newNextVideo = (currentVideo + 1) % videoFiles.length;
+    setNextVideo(newNextVideo);
+    console.log(`Video state: Current=${currentVideo} (${videoFiles[currentVideo]}), Next=${newNextVideo} (${videoFiles[newNextVideo]}), Active=${activeVideoIndex}`);
+  }, [currentVideo]);
 
   // Ensure video continues playing after theme changes
   useEffect(() => {
-    if (videoRef.current && !is3DPage) {
-      const video = videoRef.current;
+    const activeRef = activeVideoIndex === 0 ? videoRef : videoRef2;
+    if (activeRef.current && !is3DPage) {
+      const video = activeRef.current;
       const ensureVideoPlays = async () => {
         try {
           if (video.paused) {
@@ -295,7 +332,7 @@ const App: React.FC = () => {
       const timeoutId = setTimeout(ensureVideoPlays, 150);
       return () => clearTimeout(timeoutId);
     }
-  }, [mode, is3DPage]); // React to theme mode changes
+  }, [mode, is3DPage, activeVideoIndex]); // React to theme mode changes
 
   // Reset to first video if leaving home, but preserve playback state
   useEffect(() => {
@@ -319,8 +356,9 @@ const App: React.FC = () => {
 
   // Maintain video playback continuity
   useEffect(() => {
-    if (videoRef.current && !is3DPage) {
-      const video = videoRef.current;
+    const activeRef = activeVideoIndex === 0 ? videoRef : videoRef2;
+    if (activeRef.current && !is3DPage) {
+      const video = activeRef.current;
       
       const maintainPlayback = () => {
         if (!video.paused) {
@@ -339,26 +377,27 @@ const App: React.FC = () => {
       
       return () => clearTimeout(playbackCheck);
     }
-  }, [mode, currentVideo, is3DPage]);
+  }, [mode, currentVideo, is3DPage, activeVideoIndex]);
 
   // Monitor video progress and ensure continuous looping
   useEffect(() => {
-    if (videoRef.current && !is3DPage && isHome) {
-      const video = videoRef.current;
+    const activeRef = activeVideoIndex === 0 ? videoRef : videoRef2;
+    if (activeRef.current && !is3DPage && isHome) {
+      const video = activeRef.current;
       
       const handleTimeUpdate = () => {
         // Check if video is near end and prepare next video
         if (video.currentTime > 0 && video.duration > 0) {
           const timeRemaining = video.duration - video.currentTime;
-          if (timeRemaining < 1) {
-            // Prepare for smooth transition
-            console.log(`Video ${videoFiles[currentVideo]} ending soon`);
+          if (timeRemaining < 2) {
+            // Prepare next video for smooth transition
+            const nextRef = activeVideoIndex === 0 ? videoRef2 : videoRef;
+            if (nextRef.current) {
+              nextRef.current.load();
+              nextRef.current.play().catch(console.warn);
+            }
           }
         }
-      };
-
-      const handleLoadStart = () => {
-        console.log(`Loading video: ${videoFiles[currentVideo]}`);
       };
 
       const handleCanPlay = () => {
@@ -379,27 +418,26 @@ const App: React.FC = () => {
       };
 
       video.addEventListener('timeupdate', handleTimeUpdate);
-      video.addEventListener('loadstart', handleLoadStart);
       video.addEventListener('canplay', handleCanPlay);
       video.addEventListener('stalled', handleStalled);
 
       return () => {
         video.removeEventListener('timeupdate', handleTimeUpdate);
-        video.removeEventListener('loadstart', handleLoadStart);
         video.removeEventListener('canplay', handleCanPlay);
         video.removeEventListener('stalled', handleStalled);
       };
     }
-  }, [currentVideo, is3DPage, isHome]);
+  }, [currentVideo, is3DPage, isHome, activeVideoIndex]);
 
   // Failsafe video loop mechanism
   useEffect(() => {
-    if (videoRef.current && !is3DPage && isHome) {
-      const video = videoRef.current;
+    const activeRef = activeVideoIndex === 0 ? videoRef : videoRef2;
+    if (activeRef.current && !is3DPage && isHome) {
+      const video = activeRef.current;
       
       const checkVideoLoop = () => {
         if (video.ended) {
-          console.log(`Video ${videoFiles[currentVideo]} has ended, triggering loop`);
+          console.log(`Video ${videoFiles[currentVideo]} has ended, triggering seamless transition`);
           handleVideoEnd();
         }
       };
@@ -409,7 +447,7 @@ const App: React.FC = () => {
       
       return () => clearInterval(interval);
     }
-  }, [currentVideo, is3DPage, isHome, handleVideoEnd]);
+  }, [currentVideo, is3DPage, isHome, handleVideoEnd, activeVideoIndex]);
 
   // Save theme preference to localStorage
   const toggleColorMode = () => {
@@ -532,6 +570,27 @@ const App: React.FC = () => {
     setAnchorEl(null);
   };
 
+  // Preload next videos for ultra-smooth transitions
+  useEffect(() => {
+    if (isHome && !is3DPage) {
+      // Preload the next two videos for buffer
+      const preloadNext = (index: number) => {
+        const video = document.createElement('video');
+        video.src = videoFiles[index];
+        video.preload = 'auto';
+        video.load();
+      };
+      
+      // Preload next video
+      const nextIndex = (currentVideo + 1) % videoFiles.length;
+      preloadNext(nextIndex);
+      
+      // Also preload the one after that
+      const nextNextIndex = (currentVideo + 2) % videoFiles.length;
+      preloadNext(nextNextIndex);
+    }
+  }, [currentVideo, isHome, is3DPage]);
+
   return (
     <ThemeProvider theme={theme}>
       {/* Animated gradient keyframes for vibrant backgrounds */}
@@ -546,54 +605,84 @@ const App: React.FC = () => {
       </style>
       <LoadingProvider>
         <SnackbarProvider>
-          {/* Video background for all non-3D pages */}
+          {/* Dual video system for seamless transitions */}
           {!is3DPage && (
-            <video
-              ref={videoRef}
-              key={currentVideo} // force reload on video change
-              src={videoFiles[currentVideo]}
-              autoPlay
-              muted
-              loop={false}
-              onEnded={handleVideoEnd}
-              onLoadedData={() => {
-                // Ensure video plays when loaded
-                if (videoRef.current) {
-                  console.log(`Video loaded: ${videoFiles[currentVideo]}`);
-                  videoRef.current.play().catch(console.warn);
-                }
-              }}
-              onPause={(e) => {
-                // Prevent unwanted pausing except during video transitions
-                const video = e.target as HTMLVideoElement;
-                if (!video.ended && !video.seeking) {
-                  setTimeout(() => {
-                    if (!video.ended) {
-                      video.play().catch(console.warn);
+            <>
+              {/* Primary video */}
+              <video
+                ref={videoRef}
+                src={videoFiles[currentVideo]}
+                autoPlay
+                muted
+                loop={false}
+                onEnded={handleVideoEnd}
+                onLoadedData={() => {
+                  if (videoRef.current) {
+                    console.log(`Primary video loaded: ${videoFiles[currentVideo]}`);
+                    // Only play if this is the active video
+                    if (activeVideoIndex === 0) {
+                      videoRef.current.play().catch(console.warn);
                     }
-                  }, 100);
-                }
-              }}
-              onError={(e) => {
-                console.error(`Error loading video: ${videoFiles[currentVideo]}`, e);
-                // Try to move to next video on error
-                handleVideoEnd();
-              }}
-              playsInline
-              preload="auto"
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                objectFit: 'cover',
-                zIndex: 0,
-                filter: `brightness(var(--video-brightness)) contrast(var(--video-contrast)) saturate(var(--video-saturation))`,
-                pointerEvents: 'none',
-                transition: 'filter 0.3s ease-in-out',
-              }}
-            />
+                  }
+                }}
+                onError={(e) => {
+                  console.error(`Error loading primary video: ${videoFiles[currentVideo]}`, e);
+                  handleVideoEnd();
+                }}
+                playsInline
+                preload="auto"
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100vw',
+                  height: '100vh',
+                  objectFit: 'cover',
+                  zIndex: activeVideoIndex === 0 ? 1 : 0,
+                  opacity: activeVideoIndex === 0 ? 1 : 0,
+                  filter: `brightness(var(--video-brightness)) contrast(var(--video-contrast)) saturate(var(--video-saturation))`,
+                  pointerEvents: 'none',
+                  transition: 'opacity 0.5s ease-in-out',
+                }}
+              />
+              
+              {/* Secondary video (preloaded) */}
+              <video
+                ref={videoRef2}
+                src={videoFiles[nextVideo]}
+                muted
+                loop={false}
+                onLoadedData={() => {
+                  if (videoRef2.current) {
+                    console.log(`Secondary video loaded: ${videoFiles[nextVideo]}`);
+                    // Don't auto-play secondary video, only play when it becomes active
+                  }
+                }}
+                onEnded={() => {
+                  // When secondary video ends, switch back to primary
+                  handleVideoEnd();
+                }}
+                onError={(e) => {
+                  console.error(`Error loading secondary video: ${videoFiles[nextVideo]}`, e);
+                  handleVideoEnd();
+                }}
+                playsInline
+                preload="auto"
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100vw',
+                  height: '100vh',
+                  objectFit: 'cover',
+                  zIndex: activeVideoIndex === 1 ? 1 : 0,
+                  opacity: activeVideoIndex === 1 ? 1 : 0,
+                  filter: `brightness(var(--video-brightness)) contrast(var(--video-contrast)) saturate(var(--video-saturation))`,
+                  pointerEvents: 'none',
+                  transition: 'opacity 0.5s ease-in-out',
+                }}
+              />
+            </>
           )}
           {/* Overlay for readability on all non-3D pages */}
           {!is3DPage && (
