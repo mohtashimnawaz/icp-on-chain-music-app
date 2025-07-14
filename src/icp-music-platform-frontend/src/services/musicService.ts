@@ -356,4 +356,8 @@ export async function removeBannedKeyword(keyword: string) {
 
 export async function listBannedKeywords() {
   return await getMusicActor().list_banned_keywords();
-} 
+}
+
+export async function promoteToAdmin() {
+  return await getMusicActor().promote_to_admin();
+}

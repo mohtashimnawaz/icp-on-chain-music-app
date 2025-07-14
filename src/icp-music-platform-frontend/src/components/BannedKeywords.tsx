@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { listBannedKeywords, addBannedKeyword, removeBannedKeyword } from '../services/musicService';
+import { listBannedKeywords, addBannedKeyword, removeBannedKeyword, promoteToAdmin } from '../services/musicService';
 import { useSnackbar } from '../contexts/SnackbarContext';
 import { useLoading } from '../contexts/LoadingContext';
 
@@ -108,6 +108,26 @@ const BannedKeywords: React.FC = () => {
     }
   };
 
+  const handlePromoteToAdmin = async () => {
+    const promotePromise = (async () => {
+      setError(null);
+      try {
+        const ok = await promoteToAdmin();
+        if (ok) {
+          showMessage('Successfully promoted to admin!', 'success');
+        } else {
+          setError('Failed to promote to admin.');
+          showMessage('Failed to promote to admin', 'error');
+        }
+      } catch (error) {
+        setError('Failed to promote to admin.');
+        showMessage('Failed to promote to admin', 'error');
+      }
+    })();
+    
+    await withLoading(promotePromise, 'Promoting to admin...');
+  };
+
   return (
     <Box sx={{ p: 4, maxWidth: 900, mx: 'auto' }}>
       <Card sx={{
@@ -144,6 +164,32 @@ const BannedKeywords: React.FC = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
       )}
+
+      {/* Promote to Admin Button */}
+      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)', color: 'white' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+            <SecurityIcon sx={{ mr: 1 }} />
+            Admin Access Required
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2, opacity: 0.9 }}>
+            You need admin privileges to add banned keywords. Click below to promote yourself to admin (for development purposes).
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={handlePromoteToAdmin}
+            startIcon={<SecurityIcon />}
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              }
+            }}
+          >
+            Promote to Admin
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Add New Keyword */}
       <Card sx={{ mb: 3 }}>
@@ -245,4 +291,4 @@ const BannedKeywords: React.FC = () => {
   );
 };
 
-export default BannedKeywords; 
+export default BannedKeywords;
