@@ -293,6 +293,11 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Update document data-theme attribute when mode changes
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', mode);
+  }, [mode]);
+
   // Save theme preference to localStorage
   const toggleColorMode = () => {
     const newMode = mode === 'light' ? 'dark' : 'light';

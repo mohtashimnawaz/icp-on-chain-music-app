@@ -12,7 +12,8 @@ import {
   CardContent,
   LinearProgress,
   Chip,
-  Tooltip
+  Tooltip,
+  useTheme
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -176,6 +177,7 @@ const MusicSphere: React.FC<{ isPlaying: boolean }> = ({ isPlaying }) => {
 
 // Main 3D Music Player Component
 const MusicPlayer3D: React.FC = () => {
+  const theme = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(180); // 3 minutes
@@ -331,20 +333,20 @@ const MusicPlayer3D: React.FC = () => {
                 max={duration}
                 onChange={handleProgressChange}
                 sx={{
-                  color: '#4ecdc4',
+                  color: theme.palette.primary.main,
                   '& .MuiSlider-thumb': {
-                    backgroundColor: '#4ecdc4',
+                    backgroundColor: theme.palette.primary.main,
                   },
                   '& .MuiSlider-track': {
-                    backgroundColor: '#4ecdc4',
+                    backgroundColor: theme.palette.primary.main,
                   }
                 }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                <Typography variant="caption" sx={{ color: '#ccc' }}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                   {formatTime(currentTime)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#ccc' }}>
+                <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                   {formatTime(duration)}
                 </Typography>
               </Box>
@@ -362,7 +364,7 @@ const MusicPlayer3D: React.FC = () => {
               </motion.div>
               
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <IconButton sx={{ color: '#fff' }}>
+                <IconButton sx={{ color: theme.palette.text.primary }}>
                   <SkipPreviousIcon />
                 </IconButton>
               </motion.div>
@@ -371,9 +373,9 @@ const MusicPlayer3D: React.FC = () => {
                 <IconButton
                   onClick={handlePlayPause}
                   sx={{ 
-                    color: '#fff',
-                    backgroundColor: '#4ecdc4',
-                    '&:hover': { backgroundColor: '#26a69a' },
+                    color: theme.palette.primary.contrastText,
+                    backgroundColor: theme.palette.primary.main,
+                    '&:hover': { backgroundColor: theme.palette.primary.dark },
                     width: 56,
                     height: 56
                   }}
@@ -383,7 +385,7 @@ const MusicPlayer3D: React.FC = () => {
               </motion.div>
               
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <IconButton sx={{ color: '#fff' }}>
+                <IconButton sx={{ color: theme.palette.text.primary }}>
                   <SkipNextIcon />
                 </IconButton>
               </motion.div>
@@ -412,13 +414,13 @@ const MusicPlayer3D: React.FC = () => {
                 step={0.1}
                 onChange={handleVolumeChange}
                 sx={{
-                  color: '#4ecdc4',
+                  color: theme.palette.primary.main,
                   flex: 1,
                   '& .MuiSlider-thumb': {
-                    backgroundColor: '#4ecdc4',
+                    backgroundColor: theme.palette.primary.main,
                   },
                   '& .MuiSlider-track': {
-                    backgroundColor: '#4ecdc4',
+                    backgroundColor: theme.palette.primary.main,
                   }
                 }}
               />

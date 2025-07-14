@@ -4,6 +4,6 @@
 #root {
   min-height: 100vh;
   background: transparent;
-  color: #fff;
+  color: var(--primary-text-color, #fff);
   padding-bottom: 2rem;
 } 

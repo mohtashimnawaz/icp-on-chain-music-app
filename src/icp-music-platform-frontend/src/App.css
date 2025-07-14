@@ -1,16 +1,46 @@
+/* CSS Custom Properties for theme support */
+:root {
+  --primary-text-color: #fff;
+  --secondary-text-color: #b39ddb;
+  --background-gradient: linear-gradient(120deg, #18122B 0%, #7b1fa2 60%, #00e5ff 100%);
+  --nav-background: rgba(34, 34, 34, 0.95);
+  --nav-text-color: #fff;
+  --nav-link-color: #ffd700;
+  --button-text-color: #222;
+  --glass-card-background: rgba(255, 255, 255, 0.1);
+  --particle-color: rgba(255, 255, 255, 0.8);
+  --neon-base-color: #fff;
+  --neon-accent-color: #ff6b6b;
+}
+
+/* Light theme variables */
+[data-theme="light"] {
+  --primary-text-color: #18122B;
+  --secondary-text-color: #5e548e;
+  --background-gradient: linear-gradient(120deg, #f5f5fa 0%, #e1bee7 60%, #b3e5fc 100%);
+  --nav-background: rgba(255, 255, 255, 0.95);
+  --nav-text-color: #18122B;
+  --nav-link-color: #7b1fa2;
+  --button-text-color: #fff;
+  --glass-card-background: rgba(255, 255, 255, 0.8);
+  --particle-color: rgba(0, 0, 0, 0.3);
+  --neon-base-color: #18122B;
+  --neon-accent-color: #7b1fa2;
+}
+
 body {
   margin: 0;
   font-family: 'Poppins', system-ui, sans-serif;
-  background: linear-gradient(120deg, #18122B 0%, #7b1fa2 60%, #00e5ff 100%);
+  background: var(--background-gradient);
   background-size: 200% 200%;
   animation: gradientMove 16s ease-in-out infinite;
-  color: #fff;
+  color: var(--primary-text-color);
 }
 
 #root {
   min-height: 100vh;
   background: transparent;
-  color: #fff;
+  color: var(--primary-text-color);
   padding-bottom: 2rem;
 }
 
@@ -152,15 +182,15 @@ body {
 
 /* Navigation enhancements */
 nav {
-  background: rgba(34, 34, 34, 0.95);
+  background: var(--nav-background);
   backdrop-filter: blur(10px);
-  color: #fff;
+  color: var(--nav-text-color);
   font-size: 1.1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 nav a {
-  color: #ffd700;
+  color: var(--nav-link-color);
   text-decoration: none;
   margin-right: 1rem;
   transition: all 0.3s ease;
@@ -183,13 +213,13 @@ nav a:hover::after {
 }
 
 nav a:hover {
-  color: #fff;
+  color: var(--nav-text-color);
   transform: translateY(-2px);
 }
 
 button {
   background: linear-gradient(45deg, #ffd700, #ffed4a);
-  color: #222;
+  color: var(--button-text-color);
   border: none;
   border-radius: 25px;
   padding: 12px 24px;
@@ -245,7 +275,7 @@ button:disabled {
   position: absolute;
   width: 4px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--particle-color);
   border-radius: 50%;
   animation: float 3s ease-in-out infinite;
 }
@@ -275,7 +305,7 @@ button:disabled {
 
 /* Enhanced glass morphism */
 .glass-card {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-card-background);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
@@ -285,12 +315,12 @@ button:disabled {
 /* Neon effects */
 .neon-text {
   text-shadow: 
-    0 0 5px #fff,
-    0 0 10px #fff,
-    0 0 15px #fff,
-    0 0 20px #ff6b6b,
-    0 0 35px #ff6b6b,
-    0 0 40px #ff6b6b;
+    0 0 5px var(--neon-base-color),
+    0 0 10px var(--neon-base-color),
+    0 0 15px var(--neon-base-color),
+    0 0 20px var(--neon-accent-color),
+    0 0 35px var(--neon-accent-color),
+    0 0 40px var(--neon-accent-color);
   animation: flicker 1.5s infinite alternate;
 }
 
