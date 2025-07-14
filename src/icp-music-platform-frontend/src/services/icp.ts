@@ -70,8 +70,8 @@ class ICPService {
     return await this.authClient.isAuthenticated();
   }
 
-  getPrincipal(): string | null {
-    if (!this.authClient || !this.getIsAuthenticated()) {
+  async getPrincipal(): Promise<string | null> {
+    if (!this.authClient || !(await this.getIsAuthenticated())) {
       return null;
     }
     
@@ -80,7 +80,7 @@ class ICPService {
   }
 
   private async createActor() {
-    if (!this.authClient || !this.getIsAuthenticated()) {
+    if (!this.authClient || !(await this.getIsAuthenticated())) {
       return;
     }
 
@@ -105,6 +105,8 @@ class ICPService {
     this.actor = createActor(canisterId, {
       agent,
     });
+    
+    console.log('Actor created successfully with identity:', identity.getPrincipal().toString());
   }
 
   getActor() {

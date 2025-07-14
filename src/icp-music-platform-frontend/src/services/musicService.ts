@@ -5,14 +5,48 @@ import { Principal } from '@dfinity/principal';
 import type { CollabRequest, Task, TaskStatus, CollaborationSession } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
 import { icp_music_platform_backend } from '../../../declarations/icp-music-platform-backend';
 import type { Report, ReportStatus, ReportTargetType } from '../../../declarations/icp-music-platform-backend/icp-music-platform-backend.did';
+import { icpService } from './icp';
 
 let actor: ActorSubclass<_SERVICE> | null = null;
 
 export function getMusicActor(): ActorSubclass<_SERVICE> {
+  // Try to get the authenticated actor from ICP service first
+  const authenticatedActor = icpService.getActor();
+  if (authenticatedActor) {
+    return authenticatedActor;
+  }
+  
+  // Fallback to non-authenticated actor for read-only operations
   if (!actor) {
     actor = createActor(canisterId, {});
   }
   return actor;
+}
+
+// Helper function to ensure authentication for admin operations
+export async function ensureAuthenticated(): Promise<boolean> {
+  const isAuthenticated = await icpService.getIsAuthenticated();
+  if (!isAuthenticated) {
+    throw new Error('Authentication required for this operation');
+  }
+  return true;
+}
+
+// Helper function to register user if not already registered
+export async function ensureUserRegistered(username: string = 'User'): Promise<boolean> {
+  try {
+    const user = await getMusicActor().get_user();
+    if (user && user.length > 0) {
+      return true; // User already registered
+    }
+    
+    // Register the user
+    const result = await getMusicActor().register_user(username, null, null);
+    return result !== null;
+  } catch (error) {
+    console.error('Error checking/registering user:', error);
+    return false;
+  }
 }
 
 export async function uploadTrackFile(trackId: string, file: File): Promise<void> {
@@ -347,10 +381,14 @@ export async function listFollowedTracks() {
 }
 
 export async function addBannedKeyword(keyword: string) {
+  await ensureAuthenticated();
+  await ensureUserRegistered();
   return await getMusicActor().add_banned_keyword(keyword);
 }
 
 export async function removeBannedKeyword(keyword: string) {
+  await ensureAuthenticated();
+  await ensureUserRegistered();
   return await getMusicActor().remove_banned_keyword(keyword);
 }
 
@@ -359,5 +397,7 @@ export async function listBannedKeywords() {
 }
 
 export async function promoteToAdmin() {
+  await ensureAuthenticated();
+  await ensureUserRegistered();
   return await getMusicActor().promote_to_admin();
 }

@@ -1067,7 +1067,7 @@ fn get_track_analytics(track_id: u64) -> Option<TrackAnalytics> {
 
 // User CRUD
 #[ic_cdk::update]
-fn register_user(username: String, bio: Option<String>, avatar_url: Option<String>) -> Option<User> {
+pub fn register_user(username: String, bio: Option<String>, avatar_url: Option<String>) -> Option<User> {
     let principal = caller();
     if username.trim().is_empty() {
         return None;
@@ -1092,7 +1092,7 @@ fn register_user(username: String, bio: Option<String>, avatar_url: Option<Strin
 }
 
 #[ic_cdk::query]
-fn get_user() -> Option<User> {
+pub fn get_user() -> Option<User> {
     let principal = caller();
     USERS.with(|users| users.borrow().iter().find(|u| u.principal == principal).cloned())
 }

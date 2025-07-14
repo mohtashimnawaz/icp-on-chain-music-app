@@ -39,7 +39,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const isAuthenticated = await icpService.getIsAuthenticated();
         if (isAuthenticated) {
           setIsAuthenticated(true);
-          setPrincipal(icpService.getPrincipal());
+          const userPrincipal = await icpService.getPrincipal();
+          setPrincipal(userPrincipal);
           setWalletType('internet-identity');
         }
       } catch (error) {
@@ -64,7 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const success = await icpService.login();
         if (success) {
           setIsAuthenticated(true);
-          setPrincipal(icpService.getPrincipal());
+          const userPrincipal = await icpService.getPrincipal();
+          setPrincipal(userPrincipal);
           setWalletType('internet-identity');
         }
       }
