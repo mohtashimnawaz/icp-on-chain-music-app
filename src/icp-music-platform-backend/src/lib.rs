@@ -1399,7 +1399,7 @@ pub fn mark_notification_read(notification_id: u64) -> bool {
 }
 
 #[ic_cdk::update]
-pub fn promote_to_admin() -> bool {
+fn promote_to_admin() -> bool {
     let principal = caller();
     USERS.with(|users| {
         let mut users = users.borrow_mut();
@@ -2004,9 +2004,9 @@ fn auto_flag_content_if_needed(target_type: ModerationTargetType, target_id: Str
     }
 }
 
-// --- Automated Content Moderation Endpoints ---
+// --- Automated Content Moderation Endpoints (Backend Only) ---
 #[ic_cdk::update]
-pub fn add_banned_keyword(keyword: String) -> bool {
+fn add_banned_keyword(keyword: String) -> bool {
     let admin = caller();
     if !is_admin(admin) {
         return false;
@@ -2030,7 +2030,7 @@ pub fn add_banned_keyword(keyword: String) -> bool {
 }
 
 #[ic_cdk::update]
-pub fn remove_banned_keyword(keyword: String) -> bool {
+fn remove_banned_keyword(keyword: String) -> bool {
     let admin = caller();
     if !is_admin(admin) {
         return false;
@@ -2681,4 +2681,71 @@ impl Storable for TrackFile {
 impl BoundedStorable for TrackFile {
     const MAX_SIZE: u32 = 10 * 1024 * 1024 + 1024; // 10MB + metadata buffer
     const IS_FIXED_SIZE: bool = false;
+}
+
+// --- Backend Administration Functions (Not exposed via Candid) ---
+// These functions can only be called internally or via backend management tools
+
+/// Add a banned keyword (backend only)
+fn backend_add_banned_keyword(keyword: String) -> bool {
+    let keyword_lower = keyword.to_lowercase();
+    BANNED_KEYWORDS.with(|keywords| {
+        let mut keywords = keywords.borrow_mut();
+        if !keywords.contains(&keyword_lower) {
+            keywords.push(keyword_lower);
+            return true;
+        }
+        false
+    })
+}
+
+/// Remove a banned keyword (backend only)
+fn backend_remove_banned_keyword(keyword: String) -> bool {
+    let keyword_lower = keyword.to_lowercase();
+    BANNED_KEYWORDS.with(|keywords| {
+        let mut keywords = keywords.borrow_mut();
+        let len_before = keywords.len();
+        keywords.retain(|k| k != &keyword_lower);
+        keywords.len() < len_before
+    })
+}
+
+/// Promote a user to admin by principal (backend only)
+fn backend_promote_user_to_admin(user_principal: Principal) -> bool {
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        if let Some(user) = users.iter_mut().find(|u| u.principal == user_principal) {
+            user.role = UserRole::Admin;
+            return true;
+        }
+        false
+    })
+}
+
+/// Initialize default admin (backend only) - call this during deployment
+fn backend_initialize_admin(admin_principal: Principal) -> bool {
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        
+        // Check if admin already exists
+        if users.iter().any(|u| u.principal == admin_principal) {
+            // User already exists, just promote to admin
+            if let Some(user) = users.iter_mut().find(|u| u.principal == admin_principal) {
+                user.role = UserRole::Admin;
+                return true;
+            }
+        } else {
+            // Create new admin user
+            let admin_user = User {
+                principal: admin_principal,
+                username: "Administrator".to_string(),
+                bio: Some("System Administrator".to_string()),
+                avatar_url: None,
+                role: UserRole::Admin,
+            };
+            users.push(admin_user);
+            return true;
+        }
+        false
+    })
 }

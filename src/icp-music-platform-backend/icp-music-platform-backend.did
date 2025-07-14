@@ -324,7 +324,6 @@ service : {
     "follow_track": (nat64) -> (bool);
     "unfollow_track": (nat64) -> (bool);
     "list_followed_tracks": () -> (vec nat64) query;
-    "promote_to_admin": () -> (bool);
     // Playlist Management
     "create_playlist": (text, opt text, vec nat64) -> (opt record { id: nat64; owner: principal; name: text; description: opt text; track_ids: vec nat64; created_at: nat64; updated_at: nat64 });
     "update_playlist": (nat64, text, opt text, vec nat64) -> (opt record { id: nat64; owner: principal; name: text; description: opt text; track_ids: vec nat64; created_at: nat64; updated_at: nat64 });
@@ -363,8 +362,6 @@ service : {
     review_suspension_appeal: (nat64, AppealStatus, opt text) -> (bool);
     list_suspension_appeals: () -> (vec SuspensionAppeal) query;
     // --- Automated Content Moderation ---
-    add_banned_keyword: (text) -> (bool);
-    remove_banned_keyword: (text) -> (bool);
     list_banned_keywords: () -> (vec text) query;
     // --- Enhanced Version Management ---
     revert_to_version: (nat64, nat32) -> (opt record { id: nat64; title: text; description: text; contributors: vec nat64; version: nat32; splits: opt vec record { id: nat64; pct: nat8 }; comments: vec record { commenter: nat64; text: text }; payments: vec record { payer: nat64; amount: nat64; timestamp: nat64 } });

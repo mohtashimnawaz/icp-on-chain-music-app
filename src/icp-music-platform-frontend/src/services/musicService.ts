@@ -380,24 +380,6 @@ export async function listFollowedTracks() {
   return await getMusicActor().list_followed_tracks();
 }
 
-export async function addBannedKeyword(keyword: string) {
-  await ensureAuthenticated();
-  await ensureUserRegistered();
-  return await getMusicActor().add_banned_keyword(keyword);
-}
-
-export async function removeBannedKeyword(keyword: string) {
-  await ensureAuthenticated();
-  await ensureUserRegistered();
-  return await getMusicActor().remove_banned_keyword(keyword);
-}
-
 export async function listBannedKeywords() {
   return await getMusicActor().list_banned_keywords();
-}
-
-export async function promoteToAdmin() {
-  await ensureAuthenticated();
-  await ensureUserRegistered();
-  return await getMusicActor().promote_to_admin();
 }
