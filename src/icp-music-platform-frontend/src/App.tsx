@@ -29,6 +29,7 @@ import './App.css';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { LoadingProvider } from './contexts/LoadingContext';
 import TuneSphereLogo from './assets/tunesphere-logo.svg';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // MUI imports
 import AppBar from '@mui/material/AppBar';
@@ -85,52 +86,98 @@ import HistoryIcon from '@mui/icons-material/History';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
 const Home = () => (
-  <Box sx={{ p: 4, textAlign: 'center' }}>
-    <Box sx={{ mb: 6 }}>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8 }}
+    style={{ padding: '4rem', textAlign: 'center' }}
+  >
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: 0.2, duration: 0.8 }}
+      style={{ marginBottom: '6rem' }}
+    >
       <Typography variant="h2" gutterBottom sx={{ 
         color: '#fff',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundSize: '400% 400%',
+        animation: 'gradient 15s ease infinite'
       }}>
         Welcome to TuneSphere
       </Typography>
-      <Typography variant="h5" color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
-        Decentralized. Immersive. Limitless Music.
-      </Typography>
-      <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
-        The decentralized music platform built on Internet Computer
-      </Typography>
-    </Box>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+      >
+        <Typography variant="h5" color="text.secondary" sx={{ mb: 2, fontWeight: 500 }}>
+          Decentralized. Immersive. Limitless Music.
+        </Typography>
+        <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
+          The decentralized music platform built on Internet Computer
+        </Typography>
+      </motion.div>
+    </motion.div>
     
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4, mb: 6 }}>
-      <Paper sx={{ p: 3, textAlign: 'center', background: 'rgba(25, 118, 210, 0.1)' }}>
-        <Typography variant="h6" gutterBottom color="primary">🎵 Upload & Share</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Upload your music tracks and share them with the world on a decentralized platform
-        </Typography>
-      </Paper>
-      
-      <Paper sx={{ p: 3, textAlign: 'center', background: 'rgba(156, 39, 176, 0.1)' }}>
-        <Typography variant="h6" gutterBottom color="secondary">💰 Earn Royalties</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Get paid directly through smart contracts for your music streams and downloads
-        </Typography>
-      </Paper>
-      
-      <Paper sx={{ p: 3, textAlign: 'center', background: 'rgba(76, 175, 80, 0.1)' }}>
-        <Typography variant="h6" gutterBottom sx={{ color: 'success.main' }}>🤝 Collaborate</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Connect with other artists and collaborate on music projects seamlessly
-        </Typography>
-      </Paper>
-    </Box>
+    <motion.div 
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6, duration: 0.8 }}
+      style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '6rem' }}
+    >
+      {[
+        { title: '🎵 Upload & Share', desc: 'Upload your music tracks and share them with the world on a decentralized platform', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+        { title: '💰 Earn Royalties', desc: 'Get paid directly through smart contracts for your music streams and downloads', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+        { title: '🤝 Collaborate', desc: 'Connect with other artists and collaborate on music projects seamlessly', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+      ].map((item, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 20, rotateY: -15 }}
+          animate={{ opacity: 1, y: 0, rotateY: 0 }}
+          transition={{ delay: 0.8 + index * 0.2, duration: 0.6 }}
+          whileHover={{ 
+            scale: 1.05, 
+            rotateY: 5,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+          }}
+          style={{
+            padding: '2rem',
+            textAlign: 'center',
+            background: item.gradient,
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+            cursor: 'pointer',
+            transformStyle: 'preserve-3d'
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ color: '#fff', fontWeight: 'bold' }}>
+            {item.title}
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+            {item.desc}
+          </Typography>
+        </motion.div>
+      ))}
+    </motion.div>
     
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h6" gutterBottom>Connect your wallet to start your musical journey!</Typography>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 1.4, duration: 0.8 }}
+      style={{ marginBottom: '4rem' }}
+    >
+      <Typography variant="h6" gutterBottom sx={{ color: '#fff', fontWeight: 'bold' }}>
+        Connect your wallet to start your musical journey!
+      </Typography>
       <Typography variant="body2" color="text.secondary">
         Choose between Plug Wallet or Internet Identity to get started
       </Typography>
-    </Box>
-  </Box>
+    </motion.div>
+  </motion.div>
 );
 
 const navCategories = [

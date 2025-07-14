@@ -2,52 +2,146 @@ import React, { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Float, Html, Stars, Environment } from '@react-three/drei';
 import * as THREE from 'three';
-import { Typography } from '@mui/material';
+import { Typography, Box, Button } from '@mui/material';
+import { motion } from 'framer-motion';
 
-// 3D Music Notes
+// Enhanced 3D Music Notes with better animations
 const MusicNotes: React.FC = () => {
   const notesRef = useRef<THREE.Group>(null);
-  const noteCount = 15;
+  const noteCount = 20;
 
   const notes = useMemo(() => {
     return Array.from({ length: noteCount }, (_, i) => ({
       position: [
-        (Math.random() - 0.5) * 30,
-        Math.random() * 15,
-        (Math.random() - 0.5) * 30
+        (Math.random() - 0.5) * 40,
+        Math.random() * 20,
+        (Math.random() - 0.5) * 40
       ],
       rotation: [
         Math.random() * Math.PI,
         Math.random() * Math.PI,
         Math.random() * Math.PI
       ],
-      scale: Math.random() * 0.8 + 0.4,
-      type: Math.floor(Math.random() * 3) // 0: quarter, 1: eighth, 2: whole
+      scale: Math.random() * 1.2 + 0.6,
+      type: Math.floor(Math.random() * 4), // 0: quarter, 1: eighth, 2: whole, 3: treble clef
+      color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+      speed: Math.random() * 0.02 + 0.01
     }));
   }, []);
 
   useFrame((state) => {
     if (notesRef.current) {
       notesRef.current.children.forEach((note, i) => {
-        note.rotation.y += 0.01;
-        note.position.y += Math.sin(state.clock.elapsedTime + i) * 0.005;
+        const noteData = notes[i];
+        note.rotation.y += noteData.speed;
+        note.rotation.x += noteData.speed * 0.5;
+        note.position.y += Math.sin(state.clock.elapsedTime + i) * 0.01;
+        note.position.x += Math.cos(state.clock.elapsedTime + i * 0.5) * 0.005;
+        
+        // Add pulsing effect
+        const pulse = Math.sin(state.clock.elapsedTime * 2 + i) * 0.1 + 1;
+        note.scale.setScalar(noteData.scale * pulse);
       });
     }
   });
 
-  const renderNote = (type: number, position: [number, number, number], scale: number) => {
+  const renderNote = (type: number, position: [number, number, number], scale: number, color: string) => {
+    const noteColor = new THREE.Color(color);
+    
     switch (type) {
-      case 0: // Quarter note
+      case 0: // Quarter note with glow
         return (
           <group position={position} scale={scale}>
-            <mesh position={[0, 0, 0]}>
-              <sphereGeometry args={[0.1, 8, 8]} />
-              <meshStandardMaterial color="#ffffff" />
+            <mesh>
+              <sphereGeometry args={[0.15, 16, 16]} />
+              <meshStandardMaterial 
+                color={noteColor} 
+                emissive={noteColor}
+                emissiveIntensity={0.3}
+                metalness={0.8}
+                roughness={0.2}
+              />
+            </mesh>
+            <mesh position={[0, -0.4, 0]}>
+              <cylinderGeometry args={[0.03, 0.03, 0.8, 16]} />
+              <meshStandardMaterial 
+                color={noteColor}
+                emissive={noteColor}
+                emissiveIntensity={0.2}
+              />
+            </mesh>
+          </group>
+        );
+      case 1: // Eighth note
+        return (
+          <group position={position} scale={scale}>
+            <mesh>
+              <sphereGeometry args={[0.12, 16, 16]} />
+              <meshStandardMaterial 
+                color={noteColor}
+                emissive={noteColor}
+                emissiveIntensity={0.3}
+              />
             </mesh>
             <mesh position={[0, -0.3, 0]}>
-              <cylinderGeometry args={[0.02, 0.02, 0.6, 8]} />
-              <meshStandardMaterial color="#ffffff" />
+              <cylinderGeometry args={[0.02, 0.02, 0.6, 16]} />
+              <meshStandardMaterial color={noteColor} />
             </mesh>
+            <mesh position={[0.1, -0.1, 0]} rotation={[0, 0, 0.3]}>
+              <cylinderGeometry args={[0.01, 0.01, 0.3, 16]} />
+              <meshStandardMaterial color={noteColor} />
+            </mesh>
+          </group>
+        );
+      case 2: // Whole note
+        return (
+          <group position={position} scale={scale}>
+            <mesh>
+              <torusGeometry args={[0.12, 0.05, 8, 16]} />
+              <meshStandardMaterial 
+                color={noteColor}
+                emissive={noteColor}
+                emissiveIntensity={0.2}
+              />
+            </mesh>
+          </group>
+        );
+      case 3: // Treble clef
+        return (
+          <group position={position} scale={scale}>
+            <mesh>
+              <torusGeometry args={[0.08, 0.02, 8, 16]} />
+              <meshStandardMaterial 
+                color={noteColor}
+                emissive={noteColor}
+                emissiveIntensity={0.3}
+              />
+            </mesh>
+            <mesh position={[0, -0.15, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 0.3, 16]} />
+              <meshStandardMaterial color={noteColor} />
+            </mesh>
+            <mesh position={[0, 0.15, 0]}>
+              <sphereGeometry args={[0.04, 16, 16]} />
+              <meshStandardMaterial color={noteColor} />
+            </mesh>
+          </group>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <group ref={notesRef}>
+      {notes.map((note, i) => (
+        <Float key={i} speed={1 + Math.random()} rotationIntensity={0.5} floatIntensity={0.5}>
+          {renderNote(note.type, note.position as [number, number, number], note.scale, note.color)}
+        </Float>
+      ))}
+    </group>
+  );
+};
           </group>
         );
       case 1: // Eighth note
