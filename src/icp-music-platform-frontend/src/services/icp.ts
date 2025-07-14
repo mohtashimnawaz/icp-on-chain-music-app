@@ -32,8 +32,12 @@ class ICPService {
     }
 
     return new Promise((resolve) => {
+      const identityProvider = process.env.DFX_NETWORK === 'ic' 
+        ? 'https://identity.ic0.app'
+        : `http://${process.env.CANISTER_ID_INTERNET_IDENTITY || 'rdmx6-jaaaa-aaaaa-aaadq-cai'}.localhost:4943`;
+      
       this.authClient!.login({
-        identityProvider: 'https://identity.ic0.app',
+        identityProvider,
         onSuccess: async () => {
           console.log('Internet Identity login successful');
           await this.createActor();
@@ -74,17 +78,24 @@ class ICPService {
     }
 
     const identity = this.authClient.getIdentity();
+    const host = process.env.DFX_NETWORK === 'ic' ? 'https://ic0.app' : 'http://localhost:4943';
     const agent = new HttpAgent({
       identity,
-      host: process.env.NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:4943',
+      host,
     });
 
     // Fetch root key for local development
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.DFX_NETWORK !== 'ic') {
       await agent.fetchRootKey();
     }
 
-    this.actor = createActor(import.meta.env.VITE_CANISTER_ID_ICP_MUSIC_PLATFORM_BACKEND, {
+    const canisterId = process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_BACKEND;
+    if (!canisterId) {
+      console.error('Backend canister ID not found in environment variables');
+      return;
+    }
+    
+    this.actor = createActor(canisterId, {
       agent,
     });
   }

@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [react()],
   define: {
     global: 'globalThis',
-    'process.env': 'import.meta.env',
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    'process.env.DFX_NETWORK': JSON.stringify(process.env.DFX_NETWORK || 'local'),
+    'process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_BACKEND': JSON.stringify(process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_BACKEND),
+    'process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_FRONTEND': JSON.stringify(process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_FRONTEND),
+    'process.env.CANISTER_ID_INTERNET_IDENTITY': JSON.stringify(process.env.CANISTER_ID_INTERNET_IDENTITY || 'rdmx6-jaaaa-aaaaa-aaadq-cai'),
     'process.version': '""',
     'process.versions': '{}',
     'process.browser': 'true'
