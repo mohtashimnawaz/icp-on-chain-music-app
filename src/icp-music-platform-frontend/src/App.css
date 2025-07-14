@@ -16,9 +16,9 @@
   --particle-color: rgba(255, 255, 255, 0.8);
   --neon-base-color: #fff;
   --neon-accent-color: #ff6b6b;
-  --video-brightness: 0.35;
-  --video-contrast: 1.2;
-  --video-saturation: 1.1;
+  --video-brightness: 0.4;
+  --video-contrast: 1.25;
+  --video-saturation: 1.15;
 }
 
 /* Light theme variables */
@@ -34,8 +34,8 @@
   --particle-color: rgba(0, 0, 0, 0.3);
   --neon-base-color: #18122B;
   --neon-accent-color: #7b1fa2;
-  --video-brightness: 0.45;
-  --video-contrast: 1.1;
+  --video-brightness: 0.5;
+  --video-contrast: 1.15;
   --video-saturation: 1.0;
 }
 
@@ -401,11 +401,34 @@ button:disabled {
   object-fit: cover;
   z-index: 0;
   filter: brightness(var(--video-brightness)) contrast(var(--video-contrast)) saturate(var(--video-saturation));
-  transition: all 0.5s ease-in-out;
+  transition: filter 0.3s ease-in-out;
+  pointer-events: none;
 }
 
 .video-background:hover {
   filter: brightness(calc(var(--video-brightness) + 0.1)) contrast(calc(var(--video-contrast) + 0.1)) saturate(calc(var(--video-saturation) + 0.1));
+}
+
+/* Ensure video continues playing during theme transitions */
+video {
+  will-change: filter;
+}
+
+video::-webkit-media-controls {
+  display: none !important;
+}
+
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+
+video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+/* Smooth theme transition for all elements */
+* {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Modern gradient text animation */

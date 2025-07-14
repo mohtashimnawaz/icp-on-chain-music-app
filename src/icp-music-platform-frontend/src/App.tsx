@@ -14,7 +14,7 @@ import Playlists from './components/Playlists';
 import Notifications from './components/Notifications';
 import { useAuth } from './contexts/AuthContext';
 import { listNotifications } from './services/musicService';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import ModerationQueue from './components/ModerationQueue';
 import Suspensions from './components/Suspensions';
 import AuditLog from './components/AuditLog';
@@ -269,21 +269,40 @@ const App: React.FC = () => {
   const is3DPage = ['/home-3d', '/visualizer-3d', '/player-3d', '/studio-3d'].includes(location.pathname);
 
   // Cycle to next video on end
-  const handleVideoEnd = () => {
+  const handleVideoEnd = useCallback(() => {
     setCurrentVideo((prev) => {
-      if (prev === videoFiles.length - 1) {
-        // Restart from first video immediately
-        return 0;
-      } else {
-        return prev + 1;
-      }
+      const nextIndex = (prev + 1) % videoFiles.length;
+      console.log(`Video ended: ${videoFiles[prev]} -> ${videoFiles[nextIndex]}`);
+      return nextIndex;
     });
-  };
+  }, []);
 
-  // Reset to first video if leaving home
+  // Ensure video continues playing after theme changes
   useEffect(() => {
-    if (!isHome) setCurrentVideo(0);
-  }, [isHome]);
+    if (videoRef.current && !is3DPage) {
+      const video = videoRef.current;
+      const ensureVideoPlays = async () => {
+        try {
+          if (video.paused) {
+            await video.play();
+          }
+        } catch (error) {
+          console.warn('Video autoplay prevented:', error);
+        }
+      };
+      
+      // Small delay to ensure CSS variables are updated
+      const timeoutId = setTimeout(ensureVideoPlays, 150);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [mode, is3DPage]); // React to theme mode changes
+
+  // Reset to first video if leaving home, but preserve playback state
+  useEffect(() => {
+    if (!isHome && currentVideo !== 0) {
+      setCurrentVideo(0);
+    }
+  }, [isHome, currentVideo]);
 
   // Load theme preference from localStorage
   useEffect(() => {
@@ -297,6 +316,100 @@ const App: React.FC = () => {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', mode);
   }, [mode]);
+
+  // Maintain video playback continuity
+  useEffect(() => {
+    if (videoRef.current && !is3DPage) {
+      const video = videoRef.current;
+      
+      const maintainPlayback = () => {
+        if (!video.paused) {
+          // Video is playing, maintain playback
+          return;
+        }
+        
+        // Try to resume playback if it was paused due to theme change
+        video.play().catch((error) => {
+          console.warn('Could not resume video playback:', error);
+        });
+      };
+
+      // Check playback state after a short delay
+      const playbackCheck = setTimeout(maintainPlayback, 200);
+      
+      return () => clearTimeout(playbackCheck);
+    }
+  }, [mode, currentVideo, is3DPage]);
+
+  // Monitor video progress and ensure continuous looping
+  useEffect(() => {
+    if (videoRef.current && !is3DPage && isHome) {
+      const video = videoRef.current;
+      
+      const handleTimeUpdate = () => {
+        // Check if video is near end and prepare next video
+        if (video.currentTime > 0 && video.duration > 0) {
+          const timeRemaining = video.duration - video.currentTime;
+          if (timeRemaining < 1) {
+            // Prepare for smooth transition
+            console.log(`Video ${videoFiles[currentVideo]} ending soon`);
+          }
+        }
+      };
+
+      const handleLoadStart = () => {
+        console.log(`Loading video: ${videoFiles[currentVideo]}`);
+      };
+
+      const handleCanPlay = () => {
+        console.log(`Video can play: ${videoFiles[currentVideo]}`);
+        if (video.paused) {
+          video.play().catch(console.warn);
+        }
+      };
+
+      const handleStalled = () => {
+        console.warn(`Video stalled: ${videoFiles[currentVideo]}`);
+        // Try to continue playback
+        setTimeout(() => {
+          if (video.paused) {
+            video.play().catch(console.warn);
+          }
+        }, 1000);
+      };
+
+      video.addEventListener('timeupdate', handleTimeUpdate);
+      video.addEventListener('loadstart', handleLoadStart);
+      video.addEventListener('canplay', handleCanPlay);
+      video.addEventListener('stalled', handleStalled);
+
+      return () => {
+        video.removeEventListener('timeupdate', handleTimeUpdate);
+        video.removeEventListener('loadstart', handleLoadStart);
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('stalled', handleStalled);
+      };
+    }
+  }, [currentVideo, is3DPage, isHome]);
+
+  // Failsafe video loop mechanism
+  useEffect(() => {
+    if (videoRef.current && !is3DPage && isHome) {
+      const video = videoRef.current;
+      
+      const checkVideoLoop = () => {
+        if (video.ended) {
+          console.log(`Video ${videoFiles[currentVideo]} has ended, triggering loop`);
+          handleVideoEnd();
+        }
+      };
+
+      // Check every 500ms if video has ended (failsafe)
+      const interval = setInterval(checkVideoLoop, 500);
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentVideo, is3DPage, isHome, handleVideoEnd]);
 
   // Save theme preference to localStorage
   const toggleColorMode = () => {
@@ -443,7 +556,31 @@ const App: React.FC = () => {
               muted
               loop={false}
               onEnded={handleVideoEnd}
+              onLoadedData={() => {
+                // Ensure video plays when loaded
+                if (videoRef.current) {
+                  console.log(`Video loaded: ${videoFiles[currentVideo]}`);
+                  videoRef.current.play().catch(console.warn);
+                }
+              }}
+              onPause={(e) => {
+                // Prevent unwanted pausing except during video transitions
+                const video = e.target as HTMLVideoElement;
+                if (!video.ended && !video.seeking) {
+                  setTimeout(() => {
+                    if (!video.ended) {
+                      video.play().catch(console.warn);
+                    }
+                  }, 100);
+                }
+              }}
+              onError={(e) => {
+                console.error(`Error loading video: ${videoFiles[currentVideo]}`, e);
+                // Try to move to next video on error
+                handleVideoEnd();
+              }}
               playsInline
+              preload="auto"
               style={{
                 position: 'fixed',
                 top: 0,
@@ -454,7 +591,7 @@ const App: React.FC = () => {
                 zIndex: 0,
                 filter: `brightness(var(--video-brightness)) contrast(var(--video-contrast)) saturate(var(--video-saturation))`,
                 pointerEvents: 'none',
-                transition: 'opacity 0.7s ease-in-out, filter 0.3s ease-in-out',
+                transition: 'filter 0.3s ease-in-out',
               }}
             />
           )}
@@ -962,4 +1099,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App; 
+export default App;
