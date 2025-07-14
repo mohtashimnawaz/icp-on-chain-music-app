@@ -36,8 +36,15 @@ class ICPService {
         ? 'https://identity.ic0.app'
         : `http://${process.env.CANISTER_ID_INTERNET_IDENTITY || 'rdmx6-jaaaa-aaaaa-aaadq-cai'}.localhost:4943`;
       
+      console.log('ICP Service login called');
+      console.log('DFX_NETWORK:', process.env.DFX_NETWORK);
+      console.log('CANISTER_ID_INTERNET_IDENTITY:', process.env.CANISTER_ID_INTERNET_IDENTITY);
+      console.log('Identity Provider URL:', identityProvider);
+      
       this.authClient!.login({
         identityProvider,
+        maxTimeToLive: BigInt(8 * 60 * 60 * 1000 * 1000 * 1000), // 8 hours in nanoseconds
+        windowOpenerFeatures: 'width=500,height=600,toolbar=0,location=0,menubar=0,scrollbars=1,resizable=1',
         onSuccess: async () => {
           console.log('Internet Identity login successful');
           await this.createActor();

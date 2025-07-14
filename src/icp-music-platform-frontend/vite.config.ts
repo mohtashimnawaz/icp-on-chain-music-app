@@ -10,7 +10,7 @@ export default defineConfig({
     'process.env.DFX_NETWORK': JSON.stringify(process.env.DFX_NETWORK || 'local'),
     'process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_BACKEND': JSON.stringify(process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_BACKEND),
     'process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_FRONTEND': JSON.stringify(process.env.CANISTER_ID_ICP_MUSIC_PLATFORM_FRONTEND),
-    'process.env.CANISTER_ID_INTERNET_IDENTITY': JSON.stringify(process.env.CANISTER_ID_INTERNET_IDENTITY || 'rdmx6-jaaaa-aaaaa-aaadq-cai'),
+    'process.env.CANISTER_ID_INTERNET_IDENTITY': JSON.stringify(process.env.CANISTER_ID_INTERNET_IDENTITY),
     'process.version': '""',
     'process.versions': '{}',
     'process.browser': 'true'
